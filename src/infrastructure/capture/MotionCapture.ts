@@ -1,6 +1,6 @@
 /** Propriétaire exclusif du flux caméra, du modèle MediaPipe et de leur cycle de vie. */
 import { FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
-import type { PoseSample } from "./types";
+import type { PoseSample } from "../../domain/studio";
 
 export class MotionCapture {
   private detector: PoseLandmarker | null = null;
@@ -9,10 +9,13 @@ export class MotionCapture {
   private lastVideoTime = -1;
   private lastInference = 0;
   private loading: Promise<void> | null = null;
+  /** Lie le flux caméra à la vidéo possédée par le viewer. */
   constructor(private video: HTMLVideoElement) {}
+  /** Indique si un flux vidéo a effectivement été obtenu. */
   get active() {
     return this.stream !== null;
   }
+  /** Initialise une seule instance du modèle, partagée par les demandes de cette capture. */
   private async load() {
     if (this.detector) return;
     this.loading ??= (async () => {
@@ -35,6 +38,7 @@ export class MotionCapture {
     });
     await this.loading;
   }
+  /** Demande la vidéo seule et ferme les flux arrivés après une annulation. */
   async start(facingMode: "user" | "environment") {
     this.stop();
     const generation = this.generation;
@@ -85,6 +89,7 @@ export class MotionCapture {
       world: result.worldLandmarks[0],
     };
   }
+  /** Invalide les demandes précédentes et restitue immédiatement la caméra. */
   stop() {
     this.generation++;
     this.stream?.getTracks().forEach((t) => t.stop());
@@ -93,6 +98,7 @@ export class MotionCapture {
     this.video.srcObject = null;
     this.lastVideoTime = -1;
   }
+  /** Ferme le flux puis détruit le modèle après une initialisation éventuellement en cours. */
   async dispose() {
     this.stop();
     await this.loading?.catch(() => {});

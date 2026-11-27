@@ -9,5 +9,5 @@
     "noEmit": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "tests", "vite.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.vue", "tests", "vite.config.ts"]
 }

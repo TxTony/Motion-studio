@@ -1,14 +1,18 @@
-/** Échantillonne les poses locales en secondes ; conserve les lacunes de capture dans les temps. */
-import type { AnimationClip, RigPose } from "./types";
+/** Échantillonne les poses locales et conserve les lacunes de capture dans les temps du clip. */
+import type { AnimationClip, RigPose } from "../studio";
 
 export class AnimationRecorder {
   private clip: AnimationClip | null = null;
   private started = 0;
   private last = -Infinity;
-  get recording() {
+
+  /** Indique si un clip est en cours de capture. */
+  get recording(): boolean {
     return this.clip !== null;
   }
-  start(name: string, rig: string, fps: number, now: number) {
+
+  /** Démarre un clip et fixe son origine temporelle à l’horodatage en millisecondes. */
+  start(name: string, rig: string, fps: number, now: number): void {
     this.clip = {
       format: "motion-studio",
       version: 1,
@@ -21,7 +25,8 @@ export class AnimationRecorder {
     this.started = now;
     this.last = -Infinity;
   }
-  /** Retourne false au-delà de cinq minutes pour borner la mémoire du POC. */
+
+  /** Copie les poses à la cadence du clip. Retourne false hors capture ou après 300 secondes. */
   add(pose: RigPose, now: number): boolean {
     if (!this.clip) return false;
     const time = (now - this.started) / 1000;
@@ -32,6 +37,8 @@ export class AnimationRecorder {
     this.last = time;
     return true;
   }
+
+  /** Termine la capture et retourne le clip si au moins deux poses couvrent une durée positive. */
   stop(): AnimationClip | null {
     const result = this.clip;
     this.clip = null;

@@ -1,8 +1,8 @@
 # Goblin Motion Studio — POC v0.1
 
-Studio web sans backend : caméra → MediaPipe Pose → retargeting → gobelin 3D → clips JSON réutilisables.
+Studio web sans backend : caméra → MediaPipe Pose → retargeting → gobelin 3D → clips JSON réutilisables. Interface Vue 3 Composition API, TypeScript strict et Vite.
 
-**Application : https://txtony.github.io/Motion-studio/** (après succès du workflow Pages).
+**Référence POC publiée : https://txtony.github.io/Motion-studio/**. La reconstruction Vue est développée sur `refactor/vue3-studio` ; elle ne remplace pas le site de référence pendant sa recette. Le tag `reference/poc-v0.1` conserve le commit initial `63d03ec`. Voir [le suivi et les unités fonctionnelles](documentation/INDEX.md).
 
 ## Démarrage
 
@@ -18,11 +18,11 @@ Ouvrir l’URL affichée, avec le chemin `/Motion-studio/`. `npm ci` copie les f
 ```sh
 npm run test   # Vitest
 npm run build # TypeScript strict + Vite
-npm run check # tests et build
+npm run check # architecture, ESLint, tests, types Vue/TS et build
 npm run preview
 ```
 
-Le `.npmrc` conserve `legacy-peer-deps=true` pour éviter un crash Arborist de npm 10 lors de la résolution des dépendances optionnelles de Vitest ; le lockfile fixe les versions installées.
+Le `.npmrc` conserve `legacy-peer-deps=true` pour éviter un crash Arborist de npm 10 lors de la résolution des dépendances optionnelles de Vitest ; le lockfile fixe les versions installées. `vue-eslint-parser` est déclaré explicitement. L’override `@vue/test-utils → js-beautify@1.14.8` retient un formateur de tests compatible hors des plages signalées par l’audit npm ; il n’entre pas dans le bundle du produit. Des dépendances transitives de cet outil de tests restent dépréciées : réexaminer ce verrou lors d’une mise à jour de Vue Test Utils, sans changement forcé non testé.
 
 ## Utilisation
 
@@ -75,17 +75,23 @@ L’identifiant des clips GLB contient le SHA-256 du fichier. Pour relire un cli
 
 ## Architecture
 
-| Module                | Responsabilité                                                                          |
-| --------------------- | --------------------------------------------------------------------------------------- |
-| `MotionCapture`       | Permissions, flux vidéo, initialisation/inférence MediaPipe, libération des ressources  |
-| `SkeletonMapping`     | Repères, connexions, visibilité, orientation du bassin et source synthétique            |
-| `Retargeting`         | Directions → quaternions locaux, lissage, translation expérimentale                     |
-| `CharacterRenderer`   | Rig procédural/import GLB, scène Three.js, OrbitControls, rendu et nettoyage            |
-| `AnimationRecorder`   | Échantillonnage de poses copiées et horodatées en secondes                              |
-| `AnimationPlayer`     | Arbitrage temporel, recherche binaire, interpolation translation/slerp                  |
-| `AnimationSerializer` | JSON versionné et validé, contrat d’export extensible                                   |
-| `StudioUI`            | Structure de l’interface et formatage des temps                                         |
-| `main`                | Assemblage de session, commandes, arbitrage temps réel/lecture, bibliothèque en mémoire |
+Une vue `StudioView` compose les panneaux Vue. `components/core`, `forms`, `selectors` et `domain` distinguent primitives, formulaires, sélecteurs et composants métier. Les formulaires et boutons sont encapsulés et réutilisés. `useStudioSession` raccorde les viewers à une instance de `StudioSession`, sans singleton ni réactivité profonde des objets moteur.
+
+`domain/` contient les contrats, le recorder, le lecteur à interpolateur injecté et la validation JSON ; il ne dépend pas de Vue, Three.js, MediaPipe ou du DOM. `application/` détient les transitions et commandes avec horloge/ports injectés. `infrastructure/` contient les adaptateurs caméra, mathématiques, Three.js, fichiers et canvas. Le viewer 3D possède la destruction du renderer ; la session ferme la capture et le composable retire les écouteurs/boucle au démontage.
+
+Les commentaires d’intention, le rangement, les frontières, quatre paramètres maximum et 500 lignes maximum par TS/Vue sont contrôlés. Les mandats des agents et le cycle TDD sont dans [AGENTS.md](AGENTS.md), avec [les contrats de l’architecture](documentation/ARCHITECTURE.md) et [la référence de design](documentation/DESIGN.md).
+
+| Module                               | Responsabilité                                                                         |
+| ------------------------------------ | -------------------------------------------------------------------------------------- |
+| `MotionCapture`                      | Permissions, flux vidéo, initialisation/inférence MediaPipe, libération des ressources |
+| `SkeletonMapping`                    | Repères, connexions, visibilité, orientation du bassin et source synthétique           |
+| `Retargeting`                        | Directions → quaternions locaux, lissage, translation expérimentale                    |
+| `CharacterRenderer`                  | Rig procédural/import GLB, scène Three.js, OrbitControls, rendu et nettoyage           |
+| `AnimationRecorder`                  | Échantillonnage de poses copiées et horodatées en secondes                             |
+| `AnimationPlayer`                    | Arbitrage temporel, recherche binaire, interpolation translation/slerp                 |
+| `AnimationSerializer`                | JSON versionné et validé, contrat d’export extensible                                  |
+| `StudioUI`                           | Structure de l’interface et formatage des temps                                        |
+| `StudioSession` / `useStudioSession` | Commandes testées, arbitrage live/lecture, bibliothèque et raccordement Vue            |
 
 Le JSON contient `format`, `version`, `name`, `rig`, `fps`, `duration`, puis `frames[{time,pose:{root,rotations}}]`. `root` est un offset local XYZ en unités du rig. `rotations` contient les onze quaternions locaux `[x,y,z,w]`. Les timestamps sont relatifs au début de la capture, croissants, et le dernier donne `duration`. Les premiers points peuvent arriver après t=0. La lecture maintient alors la première pose. L’export GLTF futur devra transformer ces données en `VectorKeyframeTrack`/`QuaternionKeyframeTrack`, puis en `AnimationClip` Three.js lié au rig avant `GLTFExporter` ; l’interface d’export ne promet pas cette conversion aujourd’hui.
 
@@ -97,8 +103,8 @@ Le modèle officiel est [Pose Landmarker Lite, float16, version 1](https://stora
 
 ## GitHub Pages
 
-Le workflow `.github/workflows/pages.yml` exécute `npm ci`, les tests, TypeScript et le build. Les PR sont vérifiées sans publication. Les pushes sur `main` et le déclenchement manuel construisent et déploient `dist/` via l’environnement `github-pages`. La base Vite est `/Motion-studio/`, y compris pour le modèle et le WASM.
+Le workflow `.github/workflows/pages.yml` exécute `npm ci` et `npm run check` (architecture, ESLint, types, tests, build). Les PR et la branche `refactor/vue3-studio` sont vérifiées sans publication. Les pushes sur `main` et le déclenchement manuel construisent et déploient `dist/` via l’environnement `github-pages`. La base Vite est `/Motion-studio/`, y compris pour le modèle et le WASM.
 
 Dans **Settings → Pages → Build and deployment**, utiliser **GitHub Actions**. Le workflow ne requiert aucun secret applicatif : `contents: read` pour la construction, `pages: write` et `id-token: write` uniquement pour le déploiement. Si Pages n’est pas activé, un administrateur doit l’activer ; un simple droit de lecture ou une intégration GitHub retournant 403 ne suffit pas pour pousser/configurer ce dépôt.
 
-Voir [le rapport de recette](docs/RECETTE.md) pour distinguer les contrôles automatisés, les observations navigateur et les vérifications mobiles restantes.
+Voir [le rapport de migration Vue](documentation/issues/MS-007.md) et [la recette historique du POC](docs/RECETTE.md) pour distinguer les contrôles automatisés, les observations navigateur et les vérifications mobiles restantes.

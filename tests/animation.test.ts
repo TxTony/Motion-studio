@@ -1,10 +1,16 @@
 /** Vérifie les frontières de données et la lecture temporelle avec des poses indépendantes. */
-import { describe, it, expect } from "vitest";
-import { AnimationRecorder } from "../src/AnimationRecorder";
-import { AnimationPlayer } from "../src/AnimationPlayer";
-import { AnimationSerializer } from "../src/AnimationSerializer";
-import { jointNames, type AnimationClip, type RigPose } from "../src/types";
+import { describe, it, expect, vi } from "vitest";
+import { AnimationRecorder } from "../src/domain/animation/AnimationRecorder";
+import { AnimationPlayer } from "../src/domain/animation/AnimationPlayer";
+import { AnimationSerializer } from "../src/domain/animation/AnimationSerializer";
+import {
+  jointNames,
+  type AnimationClip,
+  type RigPose,
+} from "../src/domain/studio";
+import { interpolateRigPose } from "../src/infrastructure/three/interpolateRigPose";
 
+/** Produit une pose neutre avec la translation demandée sur X. */
 function pose(x = 0): RigPose {
   return {
     root: [x, 0, 0],
@@ -13,6 +19,7 @@ function pose(x = 0): RigPose {
     ) as RigPose["rotations"],
   };
 }
+/** Fournit deux images clés distantes d'une seconde. */
 function clip(): AnimationClip {
   return {
     format: "motion-studio",
@@ -53,17 +60,33 @@ describe("AnimationRecorder", () => {
   });
 });
 describe("AnimationPlayer", () => {
+  it("délègue les poses et la fraction de lecture à l'interpolateur injecté", () => {
+    const animation = clip();
+    const expectedPose = pose(42);
+    const interpolate = vi.fn(() => expectedPose);
+    const player = new AnimationPlayer(interpolate);
+    player.load(animation);
+    player.seek(0.25);
+
+    expect(player.sample()).toBe(expectedPose);
+    expect(interpolate).toHaveBeenCalledExactlyOnceWith(
+      animation.frames[0].pose,
+      animation.frames[1].pose,
+      0.25,
+    );
+  });
+
   it("interpole une translation et une rotation à mi-parcours", () => {
     const c = clip();
     c.frames[1].pose.rotations.head = [0, 1, 0, 0];
-    const p = new AnimationPlayer();
+    const p = new AnimationPlayer(interpolateRigPose);
     p.load(c);
     p.seek(0.5);
     expect(p.sample()!.root[0]).toBe(1);
     expect(p.sample()!.rotations.head[1]).toBeCloseTo(Math.SQRT1_2);
   });
   it("gère boucle, vitesse, pause et fin sans boucle", () => {
-    const p = new AnimationPlayer();
+    const p = new AnimationPlayer(interpolateRigPose);
     p.load(clip());
     p.playing = true;
     p.speed = 2;
@@ -85,12 +108,22 @@ describe("AnimationPlayer", () => {
   it("maintient la première pose avant son premier timestamp", () => {
     const c = clip();
     c.frames[0].time = 0.2;
-    const p = new AnimationPlayer();
+    const p = new AnimationPlayer(interpolateRigPose);
     p.load(c);
     expect(p.sample()!.root).toEqual([0, 0, 0]);
   });
 });
 describe("AnimationSerializer", () => {
+  it("rejette un document JSON dont une pose est une valeur inconnue", () => {
+    const animation = clip();
+    const frames: unknown[] = [animation.frames[0], { time: 1, pose: "pose" }];
+    const input: unknown = { ...animation, frames };
+
+    expect(() => AnimationSerializer.parse(JSON.stringify(input))).toThrow(
+      "Clip invalide",
+    );
+  });
+
   it("effectue un aller-retour sans perte", () => {
     expect(
       AnimationSerializer.parse(AnimationSerializer.stringify(clip())),

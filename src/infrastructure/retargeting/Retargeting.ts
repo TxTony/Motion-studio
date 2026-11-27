@@ -1,19 +1,15 @@
 /** Transforme les directions mondiales en rotations locales du rig, puis applique un filtre temporel. */
 import { Quaternion, Vector3 } from "three";
-import type { CharacterRig } from "./CharacterRenderer";
+import type { CharacterRig } from "../three/CharacterRenderer";
 import { limbPairs, point, torsoOrientation, visible } from "./SkeletonMapping";
-import {
-  jointNames,
-  type JointName,
-  type PoseSample,
-  type RigPose,
-} from "./types";
+import { jointNames, type PoseSample, type RigPose } from "../../domain/studio";
 
 export class Retargeting {
   smoothing = 0.12;
   captureRoot = false;
   private baseline: Vector3 | null = null;
   private previous: RigPose | null = null;
+  /** Oublie le filtre et l’origine lorsque la source ou le personnage change. */
   reset() {
     this.baseline = null;
     this.previous = null;

@@ -8,7 +8,7 @@ vi.mock("@mediapipe/tasks-vision", () => ({
   FilesetResolver: { forVisionTasks: vi.fn(async () => ({})) },
   PoseLandmarker: { createFromOptions: vi.fn(async () => detector) },
 }));
-import { MotionCapture } from "../src/MotionCapture";
+import { MotionCapture } from "../src/infrastructure/capture/MotionCapture";
 
 const stop = vi.fn(),
   getUserMedia = vi.fn();

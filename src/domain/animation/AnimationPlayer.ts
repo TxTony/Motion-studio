@@ -1,6 +1,8 @@
-/** Lecture temporelle, recherche binaire et interpolation quaternion sans dépendance au rendu. */
-import { Quaternion, Vector3 } from "three";
-import { jointNames, type AnimationClip, type RigPose } from "./types";
+/** Pilote le temps de lecture et confie l’interpolation des poses au port injecté. */
+import type { AnimationClip, RigPose } from "../studio";
+
+/** Calcule la pose à la fraction t, de 0 à 1, entre les deux poses encadrantes. */
+export type PoseInterpolator = (a: RigPose, b: RigPose, t: number) => RigPose;
 
 export class AnimationPlayer {
   clip: AnimationClip | null = null;
@@ -8,14 +10,23 @@ export class AnimationPlayer {
   playing = false;
   loop = true;
   speed = 1;
-  load(clip: AnimationClip) {
+
+  /** Associe le calcul des poses au lecteur. */
+  constructor(private readonly interpolate: PoseInterpolator) {}
+
+  /** Charge un clip et replace le lecteur en pause au début. */
+  load(clip: AnimationClip): void {
     this.clip = clip;
     this.time = 0;
     this.playing = false;
   }
-  seek(time: number) {
+
+  /** Déplace la tête de lecture au temps demandé en secondes, borné à la durée du clip. */
+  seek(time: number): void {
     this.time = Math.max(0, Math.min(this.clip?.duration ?? 0, time));
   }
+
+  /** Avance la lecture active du delta en secondes, en tenant compte de la vitesse et de la boucle. */
   update(delta: number): RigPose | null {
     if (this.clip && this.playing) {
       this.time += Math.max(0, delta) * this.speed;
@@ -30,6 +41,8 @@ export class AnimationPlayer {
     }
     return this.sample();
   }
+
+  /** Cherche les images clés autour du temps de lecture et calcule leur fraction d’interpolation. */
   sample(): RigPose | null {
     if (!this.clip?.frames.length) return null;
     const frames = this.clip.frames;
@@ -46,18 +59,6 @@ export class AnimationPlayer {
       b.time === a.time
         ? 0
         : Math.max(0, Math.min(1, (this.time - a.time) / (b.time - a.time)));
-    const rotations = {} as RigPose["rotations"];
-    for (const name of jointNames)
-      rotations[name] = new Quaternion()
-        .fromArray(a.pose.rotations[name])
-        .slerp(new Quaternion().fromArray(b.pose.rotations[name]), t)
-        .toArray();
-    return {
-      root: new Vector3()
-        .fromArray(a.pose.root)
-        .lerp(new Vector3().fromArray(b.pose.root), t)
-        .toArray(),
-      rotations,
-    };
+    return this.interpolate(a.pose, b.pose, t);
   }
 }

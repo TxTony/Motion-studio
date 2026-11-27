@@ -1,6 +1,6 @@
 /** Convertit les repères MediaPipe en directions Three.js ; aucune dépendance au personnage. */
 import { Matrix4, Quaternion, Vector3 } from "three";
-import type { JointName, Landmark, PoseSample } from "./types";
+import type { JointName, Landmark, PoseSample } from "../../domain/studio";
 
 export const connections = [
   [11, 12],
@@ -28,7 +28,9 @@ export const limbPairs: Partial<Record<JointName, [number, number]>> = {
   rightUpperLeg: [24, 26],
   rightLowerLeg: [26, 28],
 };
+/** Convertit le repère MediaPipe en repère Three.js Y haut, Z frontal. */
 export const point = (p: Landmark) => new Vector3(p.x, -p.y, -p.z);
+/** Valide les points utiles d’un segment avant d’en calculer la direction. */
 export function visible(points: Landmark[], ids: number[]): boolean {
   return ids.every(
     (i) =>
@@ -62,6 +64,7 @@ export function demoSample(seconds: number): PoseSample {
     z: 0,
     visibility: 1,
   }));
+  /** Place un point synthétique visible dans le repère de capture. */
   const put = (i: number, x: number, y: number, z = 0) => {
     world[i] = { x, y, z, visibility: 1 };
   };

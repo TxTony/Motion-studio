@@ -1,10 +1,14 @@
 /** Caractérise le repère, l’occultation et le filtre sur un vrai rig procédural hors WebGL. */
 import { describe, it, expect } from "vitest";
 import { Quaternion } from "three";
-import { createGoblin } from "../src/CharacterRenderer";
-import { Retargeting } from "../src/Retargeting";
-import { demoSample, torsoOrientation, point } from "../src/SkeletonMapping";
-import { jointNames } from "../src/types";
+import { createGoblin } from "../src/infrastructure/three/CharacterRenderer";
+import { Retargeting } from "../src/infrastructure/retargeting/Retargeting";
+import {
+  demoSample,
+  torsoOrientation,
+  point,
+} from "../src/infrastructure/retargeting/SkeletonMapping";
+import { jointNames } from "../src/domain/studio";
 
 describe("Retargeting", () => {
   it("convertit Y vers le haut et préserve la profondeur relative", () => {

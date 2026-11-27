@@ -2,7 +2,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { jointNames, type JointName, type RigPose } from "./types";
+import { jointNames, type JointName, type RigPose } from "../../domain/studio";
 
 export interface RigJoint {
   node: THREE.Object3D;
@@ -16,6 +16,7 @@ export interface CharacterRig {
   basePosition: THREE.Vector3;
   joints: Record<JointName, RigJoint>;
 }
+/** Construit un matériau partagé par les segments procéduraux de même finition. */
 const material = (color: number, metalness = 0, roughness = 0.7) =>
   new THREE.MeshStandardMaterial({
     color,
@@ -36,23 +37,32 @@ export function createGoblin(): CharacterRig {
     ivory = material(0xe4d8ad),
     lens = material(0x8bddd5, 0.5, 0.2);
   const nodes = {} as Record<JointName, THREE.Group>;
+  /** Attache un segment géométrique avec ses ombres et sa position locale. */
   const mesh = (
     parent: THREE.Object3D,
     geometry: THREE.BufferGeometry,
     mat: THREE.Material,
     pos: number[],
-    scale?: number[],
   ) => {
     const m = new THREE.Mesh(geometry, mat);
     m.position.fromArray(pos);
-    if (scale) m.scale.fromArray(scale);
     m.castShadow = true;
     m.receiveShadow = true;
     parent.add(m);
     return m;
   };
-  const sphere = (p: THREE.Object3D, pos: number[], s: number[], mat = green) =>
-    mesh(p, new THREE.SphereGeometry(1, 12, 8), mat, pos, s);
+  /** Dimensionne une sphère pour former un volume anatomique low-poly. */
+  const sphere = (
+    p: THREE.Object3D,
+    pos: number[],
+    s: number[],
+    mat = green,
+  ) => {
+    const segment = mesh(p, new THREE.SphereGeometry(1, 12, 8), mat, pos);
+    segment.scale.fromArray(s);
+    return segment;
+  };
+  /** Ajoute une pièce rigide d’équipement aux dimensions locales données. */
   const box = (
     p: THREE.Object3D,
     pos: number[],
@@ -65,6 +75,7 @@ export function createGoblin(): CharacterRig {
       mat,
       pos,
     );
+  /** Déclare un pivot nommé dans la hiérarchie utilisée par le retargeting. */
   const joint = (name: JointName, parent: THREE.Object3D, pos: number[]) => {
     const g = new THREE.Group();
     g.name = name;
@@ -209,6 +220,7 @@ export class CharacterRenderer {
   readonly controls: OrbitControls;
   rig = createGoblin();
   private observer: ResizeObserver;
+  /** Monte une scène orbitale dans le conteneur possédé par le viewer Vue. */
   constructor(container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -261,6 +273,7 @@ export class CharacterRenderer {
     });
     this.observer.observe(container);
   }
+  /** Applique les rotations locales et l’offset de racine au rig courant. */
   apply(pose: RigPose) {
     this.rig.motionRoot.position
       .copy(this.rig.basePosition)
@@ -268,10 +281,12 @@ export class CharacterRenderer {
     for (const name of jointNames)
       this.rig.joints[name].node.quaternion.fromArray(pose.rotations[name]);
   }
+  /** Met à jour l’amortissement orbital puis dessine l’image courante. */
   render() {
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }
+  /** Replace la caméra selon le cadrage original du gobelin. */
   resetView() {
     this.camera.position.set(3, 2.1, 5.9);
     this.controls.target.set(0, 1.25, 0);
@@ -351,6 +366,7 @@ export class CharacterRenderer {
       throw error;
     }
   }
+  /** Libère les géométries et matériaux de la hiérarchie dont ce renderer est propriétaire. */
   private disposeModel(root: THREE.Object3D) {
     root.traverse((o) => {
       if (o instanceof THREE.Mesh) {
@@ -360,6 +376,7 @@ export class CharacterRenderer {
       }
     });
   }
+  /** Déconnecte le redimensionnement, les contrôles et les ressources de rendu au démontage. */
   dispose() {
     this.observer.disconnect();
     this.controls.dispose();
