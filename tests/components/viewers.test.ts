@@ -74,4 +74,27 @@ describe("viewers", () => {
     wrapper.unmount();
     expect(mocks.disconnect).toHaveBeenCalledOnce();
   });
+  it("uses native dimensions after metadata and resets them when switching to demo", async () => {
+    const wrapper = mount(MotionCaptureViewer, {
+      props: {
+        sample: null,
+        source: "camera",
+        facing: "user",
+        caption: "Searching",
+        fps: 0,
+      },
+    });
+    const video = wrapper.get("video").element,
+      canvas = wrapper.get("canvas").element;
+    Object.defineProperties(video, {
+      videoWidth: { value: 720 },
+      videoHeight: { value: 960 },
+    });
+    await wrapper.get("video").trigger("loadedmetadata");
+    expect([canvas.width, canvas.height]).toEqual([720, 960]);
+    await wrapper.setProps({ source: "demo" });
+    expect([canvas.width, canvas.height]).toEqual([640, 480]);
+    expect(wrapper.classes()).not.toContain("mirrored");
+    wrapper.unmount();
+  });
 });

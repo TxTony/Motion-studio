@@ -8,6 +8,7 @@ vi.mock("@mediapipe/tasks-vision", () => ({
   FilesetResolver: { forVisionTasks: vi.fn(async () => ({})) },
   PoseLandmarker: { createFromOptions: vi.fn(async () => detector) },
 }));
+import { PoseLandmarker } from "@mediapipe/tasks-vision";
 import { MotionCapture } from "../src/infrastructure/capture/MotionCapture";
 
 const stop = vi.fn(),
@@ -23,6 +24,9 @@ function video() {
 }
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(PoseLandmarker.createFromOptions)
+    .mockReset()
+    .mockResolvedValue(detector as unknown as PoseLandmarker);
   vi.stubGlobal("window", { isSecureContext: true });
   vi.stubGlobal("navigator", { mediaDevices: { getUserMedia } });
   getUserMedia.mockResolvedValue({ getTracks: () => [{ stop }] });
@@ -74,7 +78,7 @@ describe("MotionCapture", () => {
     await expect(c.start("user")).rejects.toThrow("Permission denied");
     expect(c.active).toBe(false);
   });
-  it("runs inference only on new frames, up to 30 Hz", async () => {
+  it("runs inference only on new frames, with the classic coach 90 ms spacing", async () => {
     detector.detectForVideo.mockReturnValue({
       landmarks: [],
       worldLandmarks: [],
@@ -86,8 +90,58 @@ describe("MotionCapture", () => {
     expect(c.sample(110)).toBeUndefined();
     expect(c.sample(150)).toBeUndefined();
     v.currentTime = 2;
-    expect(c.sample(150)).toBeNull();
+    expect(c.sample(150)).toBeUndefined();
+    expect(c.sample(190)).toBeNull();
     expect(detector.detectForVideo).toHaveBeenCalledTimes(2);
     await c.dispose();
+  });
+  it("uses the classic coach GPU profile and portrait camera preferences", async () => {
+    const c = new MotionCapture(video());
+    await c.start("user");
+    expect(PoseLandmarker.createFromOptions).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        baseOptions: expect.objectContaining({ delegate: "GPU" }),
+        minPoseDetectionConfidence: 0.55,
+        minPosePresenceConfidence: 0.55,
+        minTrackingConfidence: 0.5,
+      }),
+    );
+    expect(getUserMedia).toHaveBeenCalledWith({
+      audio: false,
+      video: {
+        facingMode: { ideal: "user" },
+        width: { ideal: 720 },
+        height: { ideal: 960 },
+        frameRate: { ideal: 24 },
+      },
+    });
+    await c.dispose();
+  });
+  it("falls back to CPU when GPU initialization fails", async () => {
+    vi.mocked(PoseLandmarker.createFromOptions).mockRejectedValueOnce(
+      new Error("GPU unavailable"),
+    );
+    const c = new MotionCapture(video());
+    await c.start("user");
+    expect(PoseLandmarker.createFromOptions).toHaveBeenCalledTimes(2);
+    expect(PoseLandmarker.createFromOptions).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        baseOptions: expect.objectContaining({ delegate: "CPU" }),
+      }),
+    );
+    expect(c.active).toBe(true);
+    await c.dispose();
+  });
+  it("propagates CPU initialization failure without requesting a stream", async () => {
+    vi.mocked(PoseLandmarker.createFromOptions).mockRejectedValue(
+      new Error("Model unavailable"),
+    );
+    const c = new MotionCapture(video());
+    await expect(c.start("user")).rejects.toThrow("Model unavailable");
+    expect(PoseLandmarker.createFromOptions).toHaveBeenCalledTimes(2);
+    expect(getUserMedia).not.toHaveBeenCalled();
+    expect(c.active).toBe(false);
   });
 });

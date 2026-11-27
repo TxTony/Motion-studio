@@ -14,7 +14,7 @@ Adapters in `infrastructure/` implement ports from `application/` or `domain/`. 
 
 ## Engine and session boundaries
 
-Capture exposes `start(facing)`, `sample(nowMs)`, `stop()`, and `dispose()`. It requests video only. `undefined` means no new frame, `null` means no body was detected, and a pose value means a new sample is available.
+Capture exposes `start(facing)`, `sample(nowMs)`, `stop()`, and `dispose()`. It requests video only, preferring portrait 720 × 960 at 24 FPS. MS-009 adopts the classic coach Lite profile: GPU initialization with CPU fallback, 0.55 detection/presence thresholds, and at least 90 ms between new-frame inferences. The overlay draws in native image pixels; video and canvas share centered CSS contain fitting and front-camera mirroring. `undefined` means no new frame, `null` means no body was detected, and a pose value means a new sample is available.
 
 Rendering exposes `apply(pose)`, `render()`, `resetView()`, `loadGLB(bytes)`, and `dispose()`. Only the retargeting adapter accesses the renderer's rig. Retargeting exposes `solve(sample, rig, dtSeconds)` and `reset()`, and uses the reference constants for smoothing and root translation. The procedural character is one implementation of the rig contract.
 

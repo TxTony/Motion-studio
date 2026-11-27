@@ -1,5 +1,9 @@
 /** Owns the camera stream, MediaPipe model, and their lifecycles. */
-import { FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
+import {
+  FilesetResolver,
+  PoseLandmarker,
+  type PoseLandmarkerOptions,
+} from "@mediapipe/tasks-vision";
 import type { PoseSample } from "../../domain/studio";
 
 export class MotionCapture {
@@ -7,7 +11,7 @@ export class MotionCapture {
   private stream: MediaStream | null = null;
   private generation = 0;
   private lastVideoTime = -1;
-  private lastInference = 0;
+  private lastInference = -Infinity;
   private loading: Promise<void> | null = null;
   /** Binds the camera stream to the viewer-owned video element. */
   constructor(private video: HTMLVideoElement) {}
@@ -15,24 +19,32 @@ export class MotionCapture {
   get active() {
     return this.stream !== null;
   }
-  /** Initializes one model instance shared by this capture's requests. */
+  /** Loads the classic coach Lite profile with GPU preference and CPU fallback. */
   private async load() {
     if (this.detector) return;
     this.loading ??= (async () => {
       const files = await FilesetResolver.forVisionTasks(
         `${import.meta.env.BASE_URL}mediapipe`,
       );
-      this.detector = await PoseLandmarker.createFromOptions(files, {
+      const options: PoseLandmarkerOptions = {
         baseOptions: {
           modelAssetPath: `${import.meta.env.BASE_URL}models/pose_landmarker_lite.task`,
-          delegate: "CPU",
+          delegate: "GPU",
         },
         runningMode: "VIDEO",
         numPoses: 1,
-        minPoseDetectionConfidence: 0.5,
-        minPosePresenceConfidence: 0.5,
+        minPoseDetectionConfidence: 0.55,
+        minPosePresenceConfidence: 0.55,
         minTrackingConfidence: 0.5,
-      });
+      };
+      try {
+        this.detector = await PoseLandmarker.createFromOptions(files, options);
+      } catch {
+        this.detector = await PoseLandmarker.createFromOptions(files, {
+          ...options,
+          baseOptions: { ...options.baseOptions, delegate: "CPU" },
+        });
+      }
     })().finally(() => {
       this.loading = null;
     });
@@ -52,8 +64,9 @@ export class MotionCapture {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: facingMode },
-          width: { ideal: 640 },
-          height: { ideal: 480 },
+          width: { ideal: 720 },
+          height: { ideal: 960 },
+          frameRate: { ideal: 24 },
         },
         audio: false,
       });
@@ -69,13 +82,13 @@ export class MotionCapture {
       throw error;
     }
   }
-  /** Runs synchronous inference on new video frames only, up to 30 Hz. */
+  /** Samples new video frames at least 90 ms apart, matching the classic coach. */
   sample(now: number): PoseSample | null | undefined {
     if (
       !this.detector ||
       !this.stream ||
       this.video.readyState < 2 ||
-      now - this.lastInference < 1000 / 30 ||
+      now - this.lastInference < 90 ||
       this.video.currentTime === this.lastVideoTime
     )
       return undefined;
@@ -97,6 +110,7 @@ export class MotionCapture {
     this.video.pause();
     this.video.srcObject = null;
     this.lastVideoTime = -1;
+    this.lastInference = -Infinity;
   }
   /** Closes the stream and disposes the model after any pending initialization finishes. */
   async dispose() {

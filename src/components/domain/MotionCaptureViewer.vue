@@ -17,13 +17,16 @@ let observer: ResizeObserver | undefined;
 /** Projects landmarks into the same contained rectangle as the active video. */
 function redraw() {
   if (!overlay.value) return;
-  const ratio =
-    props.source === "camera" && video.value?.videoWidth
-      ? video.value.videoWidth / video.value.videoHeight
-      : 4 / 3;
-  drawSkeleton(overlay.value, props.sample, ratio);
+  const nativeVideo =
+    props.source === "camera" &&
+    video.value?.videoWidth &&
+    video.value.videoHeight;
+  drawSkeleton(overlay.value, props.sample, {
+    width: nativeVideo ? video.value!.videoWidth : 640,
+    height: nativeVideo ? video.value!.videoHeight : 480,
+  });
 }
-watch(() => props.sample, redraw, { flush: "post" });
+watch(() => [props.sample, props.source], redraw, { flush: "post" });
 onMounted(() => {
   if (!video.value || !overlay.value) return;
   emit("ready", video.value);
@@ -38,7 +41,14 @@ onBeforeUnmount(() => observer?.disconnect());
     class="capture-viewport"
     :class="{ mirrored: source === 'camera' && facing === 'user' }"
   >
-    <video ref="video" playsinline muted aria-label="Camera preview"></video
+    <video
+      ref="video"
+      playsinline
+      muted
+      aria-label="Camera preview"
+      @loadedmetadata="redraw"
+      @resize="redraw"
+    ></video
     ><canvas ref="overlay" aria-label="Detected joints"></canvas>
     <div class="viewport-badge">
       <i></i
