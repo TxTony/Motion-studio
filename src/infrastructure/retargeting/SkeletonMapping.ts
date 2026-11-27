@@ -2,6 +2,9 @@
 import { Matrix4, Quaternion, Vector3 } from "three";
 import type { JointName, Landmark, PoseSample } from "../../domain/studio";
 
+const minimumShoulderVisibility = 0.55;
+const minimumProjectedShoulderSpanSquared = 0.00001;
+
 export const connections = [
   [11, 12],
   [11, 13],
@@ -53,6 +56,42 @@ export function torsoOrientation(points: Landmark[]): Quaternion | null {
   x.crossVectors(y, z).normalize();
   return new Quaternion().setFromRotationMatrix(
     new Matrix4().makeBasis(x, y, z),
+  );
+}
+
+/** Measures left-to-right shoulder yaw in radians around pelvis-local +Y from 3D world landmarks. */
+export function shoulderYawInPelvis(
+  points: Landmark[],
+  pelvis: Quaternion,
+): number | null {
+  const left = points[11];
+  const right = points[12];
+  if (!reliableShoulder(left) || !reliableShoulder(right)) return null;
+
+  const axis = point(right)
+    .sub(point(left))
+    .applyQuaternion(pelvis.clone().invert());
+  const projectedSpanSquared = axis.x ** 2 + axis.z ** 2;
+  if (
+    !Number.isFinite(projectedSpanSquared) ||
+    projectedSpanSquared < minimumProjectedShoulderSpanSquared
+  )
+    return null;
+
+  // At rest the left-to-right axis points toward -X. Positive +Y rotation takes it toward +Z.
+  return Math.atan2(axis.z, -axis.x);
+}
+
+/** Requires finite world geometry and explicit shoulder tracking confidence. */
+function reliableShoulder(
+  shoulder: Landmark | undefined,
+): shoulder is Landmark {
+  return (
+    !!shoulder &&
+    (shoulder.visibility ?? 0) >= minimumShoulderVisibility &&
+    [shoulder.x, shoulder.y, shoulder.z, shoulder.visibility].every(
+      Number.isFinite,
+    )
   );
 }
 

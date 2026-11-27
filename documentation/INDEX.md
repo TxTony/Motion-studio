@@ -8,6 +8,8 @@ MS-008: all maintained code, comments, tests, UI and documentation use English. 
 
 MS-009: the PO reports stationary overlay offset and unstable tracking. Reuse the classic coach capture profile and native video overlay coordinates. Hardware acceptance remains pending; do not activate the camera automatically.
 
+MS-010: progressive shoulder-driven torso yaw is implemented; physical camera acceptance remains pending. MS-011 records the proposed external skeleton mapping workflow; its importer is not implemented.
+
 ## Functional units
 
 | Issue                      | Verifiable outcome                                             | Status    | Owner                                                                  |
@@ -21,6 +23,8 @@ MS-009: the PO reports stationary overlay offset and unstable tracking. Reuse th
 | [MS-007](issues/MS-007.md) | Integrated studio checked against the preserved reference      | In review | Coordinator                                                            |
 | [MS-008](issues/MS-008.md) | English language and character-independent identity            | In review | Coordinator; animation_domain; design_reference; english_documentation |
 | [MS-009](issues/MS-009.md) | Aligned camera overlay using the classic coach capture profile | In review | Coordinator                                                            |
+| [MS-010](issues/MS-010.md) | Progressive torso follow from shoulder rotation                | In review | Coordinator; animation_domain                                          |
+| [MS-011](issues/MS-011.md) | External skeleton import and semantic mapping specification    | To do     | Coordinator                                                            |
 
 Statuses: To do, In progress, In review, Done. Detailed evidence belongs in issues; In review retains pending checks and acceptance decisions.
 

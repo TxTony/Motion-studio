@@ -53,6 +53,14 @@ Camera access requires HTTPS or localhost, WebAssembly, WebGL, and `getUserMedia
 
 Capture uses the classic coach profile: Pose Landmarker Lite v1, GPU initialization with CPU fallback, and at least 90 ms between inferences (about 11 samples/s maximum). The 15/30 FPS recording settings remain upper limits, not a guaranteed camera sample rate. Inference is synchronous on the main thread and can slow down low-end devices. The camera requests portrait 720 × 960 at 24 FPS as preferences; actual dimensions depend on the device. Video and overlay share native image coordinates and the same centered contain fit. A partial body may produce unreliable depth or hidden limbs; framing cannot replace visible joints. The renderer caps device pixel ratio at 2. Moving inference to a worker is a possible follow-up after measurement. Three.js produces a chunk of about 552 kB minified (140 kB gzip), which triggers a known Vite warning.
 
+## Shoulder-driven torso follow
+
+The torso follows shoulder rotation relative to the pelvis. The initial response has a 10 degree dead zone, follows 75% of the excess angle, and caps the extra torso turn at 45 degrees in either direction. A 30 degree shoulder turn produces a 15 degree torso turn. Existing smoothing controls the transition. The head follows the torso; independent head orientation remains outside this feature. The pelvis retains its existing orientation calculation.
+
+Both shoulders must have reliable 3D landmarks. Unreliable shoulder yaw holds the last extra turn until tracking recovers; an unavailable pelvis frame still holds the whole pose. Missing hips can therefore prevent upper-body animation. These tuning values require real-camera acceptance and do not resolve ambiguous monocular depth. See [MS-010](documentation/issues/MS-010.md).
+
+For a reproducible camera-free check, run Vite and open `/Motion-studio/tests/browser/torso-follow.html`. The fixture uses the real retargeter/renderer with fixed-pelvis shoulder turns and measured world angles. It is a development test surface, excluded from the production entry.
+
 ## Interchangeable character
 
 Capture produces only `PoseSample`. `SkeletonMapping` and `Retargeting` work with the `CharacterRig` contract, so changes to the rendered geometry stay independent of `MotionCapture`.
@@ -72,6 +80,8 @@ hips
 Every joint must descend from `hips`. The arm and leg branches must follow this hierarchy for local rotations to work. The first Bone child, or the first offset child, determines the limb axis. Add a terminal bone at each forearm and lower leg. Without one, the POC assumes -Y for the terminal limb. The hip, torso, and head axes must use the canonical Y-up, Z-forward frame. The model owns its offsets, meshes, and skinning. Rigs with arbitrary hierarchies, twist bones, constraints, or scales require manual preparation.
 
 The identifier for a GLB clip includes the file's SHA-256. To play a clip after reopening the studio, import the same GLB and then the JSON. The library retains clips for other rigs and plays them once the matching rig is active. **Recenter 3D camera** restores the default framing. Imported models must meet the size and orientation requirements above. Current default character clips use `default-character-v1`. JSON import recognizes older clips for this default rig and maps them to the current ID.
+
+External skeleton mapping is specified in [MS-011](documentation/issues/MS-011.md) and is not implemented yet. The proposed import keeps model names intact and associates source nodes with the studio's semantic joint roles, including rest-frame corrections. Cesium Man is a planned integration fixture, not an engine naming standard. The current exact-name import requirements above remain applicable.
 
 ## Architecture
 

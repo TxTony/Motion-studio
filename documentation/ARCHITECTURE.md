@@ -18,6 +18,8 @@ Capture exposes `start(facing)`, `sample(nowMs)`, `stop()`, and `dispose()`. It 
 
 Rendering exposes `apply(pose)`, `render()`, `resetView()`, `loadGLB(bytes)`, and `dispose()`. Only the retargeting adapter accesses the renderer's rig. Retargeting exposes `solve(sample, rig, dtSeconds)` and `reset()`, and uses the reference constants for smoothing and root translation. The procedural character is one implementation of the rig contract.
 
+MS-010 adds shoulder yaw projected into the pelvis-local horizontal plane. The pure numeric response in `domain/torso-follow.ts` supplies a symmetric dead zone, gain and limit; `SkeletonMapping` owns the 3D projection and confidence checks. `Retargeting` owns the held yaw and reset, composes the extra spine/head world rotation, then uses the existing parent-to-local conversion and smoothing. Full landmark detection and clip contracts are unchanged. External-rig semantic binding is proposed in [MS-011](issues/MS-011.md), not yet implemented.
+
 The session receives ports for the source, character, pose resolution, clock, and files. It owns the library, selection, live and playback modes, recorder, player, and control availability. Tests exercise its commands independently of the components. The viewers mount and dispose of their adapters. The composable cancels the session loop and removes listeners on unmount.
 
 ## UI composition

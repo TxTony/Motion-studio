@@ -1,23 +1,45 @@
 /** Converts world directions to local rig rotations and applies temporal smoothing. */
 import { Quaternion, Vector3 } from "three";
 import type { CharacterRig } from "../three/CharacterRenderer";
-import { limbPairs, point, torsoOrientation, visible } from "./SkeletonMapping";
+import {
+  limbPairs,
+  point,
+  shoulderYawInPelvis,
+  torsoOrientation,
+  visible,
+} from "./SkeletonMapping";
 import { jointNames, type PoseSample, type RigPose } from "../../domain/studio";
+import { torsoFollowYaw } from "../../domain/torso-follow";
+
+const pelvisUpAxis = new Vector3(0, 1, 0);
 
 export class Retargeting {
   smoothing = 0.12;
   captureRoot = false;
   private baseline: Vector3 | null = null;
   private previous: RigPose | null = null;
-  /** Resets smoothing and the origin when the source or character changes. */
+  private additionalTorsoYaw = 0;
+  /** Resets smoothing, the root origin, and remembered torso yaw when tracking is reset. */
   reset() {
     this.baseline = null;
     this.previous = null;
+    this.additionalTorsoYaw = 0;
   }
   /** Uses a time delta in seconds. A time constant of zero disables smoothing. Returns null if the hips are occluded. */
   solve(sample: PoseSample, rig: CharacterRig, dt: number): RigPose | null {
-    const torso = torsoOrientation(sample.world);
-    if (!torso) return null;
+    const pelvis = torsoOrientation(sample.world);
+    if (!pelvis) return null;
+    const shoulderYaw = shoulderYawInPelvis(sample.world, pelvis);
+    if (shoulderYaw !== null)
+      this.additionalTorsoYaw = torsoFollowYaw(shoulderYaw);
+    const torso = pelvis
+      .clone()
+      .multiply(
+        new Quaternion().setFromAxisAngle(
+          pelvisUpAxis,
+          this.additionalTorsoYaw,
+        ),
+      );
     const rotations = {} as RigPose["rotations"];
     const alpha =
       this.smoothing <= 0
@@ -42,7 +64,7 @@ export class Retargeting {
           .setFromUnitVectors(rest.normalize(), direction.normalize())
           .multiply(joint.bindWorld);
       } else if (!pair) {
-        desired = torso.clone();
+        desired = name === "hips" ? pelvis : torso;
       } else {
         rotations[name] =
           this.previous?.rotations[name] ?? joint.node.quaternion.toArray();

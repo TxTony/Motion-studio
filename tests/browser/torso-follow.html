@@ -1,0 +1,55 @@
+<!doctype html>
+<!-- Camera-free manual fixture for MS-010; excluded from the production Vite entry. -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MS-010 torso follow fixture</title>
+    <style>
+      body {
+        margin: 0;
+        background: #101216;
+        color: #e5e7ed;
+        font: 16px system-ui;
+      }
+      main {
+        max-width: 900px;
+        margin: auto;
+        padding: 16px;
+      }
+      button {
+        padding: 10px;
+        margin: 4px;
+        color: inherit;
+        background: #30333e;
+        border: 1px solid #9b7aff;
+        border-radius: 6px;
+      }
+      #scene {
+        height: 560px;
+        width: 100%;
+      }
+      output {
+        display: block;
+        padding: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Torso follow - deterministic fixture</h1>
+      <p>
+        Fixed pelvis, synthetic shoulder rotation. No camera. Smoothing disabled
+        to inspect target angles.
+      </p>
+      <button data-angle="0">Neutral</button>
+      <button data-angle="8">Below threshold +8</button>
+      <button data-angle="30">Turn +30</button>
+      <button data-angle="-30">Turn -30</button>
+      <button data-angle="90">Turn +90</button>
+      <output id="result" aria-live="polite"></output>
+      <div id="scene"></div>
+    </main>
+    <script type="module" src="./torso-follow.ts"></script>
+  </body>
+</html>
