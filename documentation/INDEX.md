@@ -6,6 +6,8 @@ Vue 3/Vite reconstruction authorized on 27 November 2026. Use TDD, reusable comp
 
 MS-008: all maintained code, comments, tests, UI and documentation use English. Product and engine terminology are independent of the default character. Preserve its geometry and existing animation data compatibility; mascot creation is deferred. Immutable historical references are not rewritten.
 
+MS-004 follow-up: real-camera/MediaPipe wiring is present and statically checked. The PO deferred hardware testing; do not activate the camera as part of this follow-up.
+
 ## Functional units
 
 | Issue                      | Verifiable outcome                                        | Status    | Owner                                                                  |
