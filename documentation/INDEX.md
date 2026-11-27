@@ -8,7 +8,7 @@ Reconstruction Vue 3/Vite autorisée le 27 novembre 2026. TDD, composants réuti
 
 | Issue                      | Résultat vérifiable                                                      | Statut   | Responsable                           |
 | -------------------------- | ------------------------------------------------------------------------ | -------- | ------------------------------------- |
-| [MS-001](issues/MS-001.md) | Référence préservée et cadre agentique applicable                        | En cours | Coordinateur                          |
+| [MS-001](issues/MS-001.md) | Référence préservée et cadre agentique applicable                        | Terminée | Coordinateur                          |
 | [MS-002](issues/MS-002.md) | Clips et lecture indépendants de l’interface                             | En revue | animation_domain · gpt-6.2-sol medium |
 | [MS-003](issues/MS-003.md) | Référence visuelle et règles de composition explicites                   | En revue | design_reference · modèle hérité      |
 | [MS-004](issues/MS-004.md) | Capture et personnage intégrés dans des vues Vue à cycle de vie maîtrisé | En revue | Coordinateur / développeur            |
