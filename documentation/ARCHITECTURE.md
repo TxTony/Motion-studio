@@ -1,29 +1,31 @@
-# Architecture cible et contrats de migration
+# Architecture and migration contracts
 
-Vue 3 Composition API, Vite et TypeScript strict. Une seule vue Studio, sans routeur ni store global. Les refs DOM appartiennent aux viewers ; les données de session restent testables sans rendu et sans caméra.
+The studio uses the Vue 3 Composition API, Vite, and strict TypeScript. A single Studio view owns session state locally. Adding a router or global store would require a separate use case. The viewers own DOM refs. Session data is testable without rendering or a camera.
 
-## Dépendances
+## Dependencies
 
-`views → components/domain + composables → application → domain`.
+`views → components/domain + composables → application → domain`
 
-Les adaptateurs `infrastructure/` implémentent les ports de `application/` ou `domain/`. Le point d’assemblage injecte ces adaptateurs ; le domaine n’importe ni Vue, ni Three.js, ni MediaPipe, ni le DOM. La session ne dépend pas des composants. Les objets Three/flux/canvases ne sont jamais profondément réactifs.
+Adapters in `infrastructure/` implement ports from `application/` or `domain/`. The composition root injects them. The domain runs independently of Vue, Three.js, MediaPipe, and the DOM. The session runs independently of the components. Three.js objects, streams, and canvases stay outside deep Vue reactivity.
 
-## Données
+## Data
 
-`domain/studio.ts` conserve les onze articulations, tuple quaternion XYZW, translation XYZ, PoseSample et JSON v1. Les timestamps d’inférence sont en ms ; clips et lecture en secondes. `AnimationRecorder` conserve les valeurs 15/30 Hz, limite 300 s et copies des poses. `AnimationPlayer` reçoit une fonction `PoseInterpolator` injectée, garde recherche temporelle et boucle ; l’adaptateur Three conserve lerp/slerp existants. Le serializer valide les données inconnues avant de produire le type métier. Pas de nouvelle bibliothèque de mathématiques ni changement de format.
+`domain/studio.ts` defines eleven joints, XYZW quaternion tuples, XYZ translation, `PoseSample`, and JSON v1. Inference timestamps use milliseconds. Clips and playback use seconds. `AnimationRecorder` samples at 15 or 30 Hz for up to 300 s and copies poses. `AnimationPlayer` takes an injected `PoseInterpolator` and owns time lookup and looping. The Three.js adapter preserves the original lerp and slerp. The serializer validates unknown data before returning the domain type. The migration preserves the format and existing math library.
 
-## Frontières moteur et session
+## Engine and session boundaries
 
-Capture : `start(facing)`, `sample(nowMs)`, `stop()`, `dispose()` ; aucun micro. `undefined` signifie aucune nouvelle image, `null` signifie aucun corps, une valeur signifie une pose. Rendu : `apply(pose)`, `render()`, `resetView()`, `loadGLB(bytes)`, `dispose()` et rig accessible seulement à l’adaptateur de retargeting. Retargeting : `solve(sample, rig, dtSeconds)` et `reset()`, lissage et root selon les constantes de référence.
+Capture exposes `start(facing)`, `sample(nowMs)`, `stop()`, and `dispose()`. It requests video only. `undefined` means no new frame, `null` means no body was detected, and a pose value means a new sample is available.
 
-La session reçoit des ports pour source, personnage, résolution de pose, horloge/fichiers. Elle détient bibliothèque, sélection, mode live/lecture, recorder/player et états d’indisponibilité. Ses commandes sont testées avant les composants. Les viewers montent les adaptateurs et les détruisent au démontage ; la boucle de session est annulée et les listeners retirés.
+Rendering exposes `apply(pose)`, `render()`, `resetView()`, `loadGLB(bytes)`, and `dispose()`. Only the retargeting adapter accesses the renderer's rig. Retargeting exposes `solve(sample, rig, dtSeconds)` and `reset()`, and uses the reference constants for smoothing and root translation. The procedural character is one implementation of the rig contract.
 
-## Composition UI
+The session receives ports for the source, character, pose resolution, clock, and files. It owns the library, selection, live and playback modes, recorder, player, and control availability. Tests exercise its commands independently of the components. The viewers mount and dispose of their adapters. The composable cancels the session loop and removes listeners on unmount.
 
-`core/StudioButton`, `StudioPanel`, `forms/StudioTextField`, `StudioRangeField`, `StudioCheckbox`, `StudioFileInput`, `selectors/StudioSelect`. Les composants métier réutilisent ces primitives et émettent des intentions typées. `views/StudioView.vue` compose les panneaux. Pas d’HTML généré avec innerHTML ni de recherche globale par identifiant pour piloter l’état.
+## UI composition
 
-## Contrôles
+The shared primitives are `core/StudioButton`, `core/StudioPanel`, `forms/StudioTextField`, `forms/StudioRangeField`, `forms/StudioCheckbox`, `forms/StudioFileInput`, and `selectors/StudioSelect`. Studio-specific components reuse these primitives and emit typed actions. `views/StudioView.vue` composes the panels. Vue bindings handle markup and state, with DOM access scoped to each component.
 
-ESLint flat config Vue/TypeScript, max-params 4, max-lines 500, noms cohérents, en-têtes et frontières de dépendance/rangement contrôlés. Vitest conserve les caractérisations existantes et teste les nouvelles commandes avec horloge et ports simulés, puis les composants avec Vue Test Utils. Recette navigateur sur desktop et viewport mobile ; essais réels téléphone toujours distincts.
+## Checks
 
-Sources techniques : [Vue — Composition API et TypeScript](https://vuejs.org/guide/typescript/composition-api), [tests Vue](https://vuejs.org/guide/scaling-up/testing.html), [ESLint Vue](https://eslint.vuejs.org/user-guide/). Les règles spécifiques du dépôt sont dans AGENTS.md.
+The Vue and TypeScript ESLint flat configuration enforces a maximum of four parameters and 500 lines. Repository checks cover consistent naming, responsibility headers, dependency boundaries, and file placement. Vitest preserves the characterization tests and covers new commands with a controlled clock and fake ports. Component tests use Vue Test Utils. Browser acceptance covers desktop and a mobile-sized viewport. Physical phone testing is a separate step.
+
+See the [Vue Composition API and TypeScript guide](https://vuejs.org/guide/typescript/composition-api), [Vue testing guide](https://vuejs.org/guide/scaling-up/testing.html), [ESLint Vue guide](https://eslint.vuejs.org/user-guide/), and [repository contribution guidelines](../AGENTS.md).

@@ -1,4 +1,4 @@
-/** Transforme les directions mondiales en rotations locales du rig, puis applique un filtre temporel. */
+/** Converts world directions to local rig rotations and applies temporal smoothing. */
 import { Quaternion, Vector3 } from "three";
 import type { CharacterRig } from "../three/CharacterRenderer";
 import { limbPairs, point, torsoOrientation, visible } from "./SkeletonMapping";
@@ -9,12 +9,12 @@ export class Retargeting {
   captureRoot = false;
   private baseline: Vector3 | null = null;
   private previous: RigPose | null = null;
-  /** Oublie le filtre et l’origine lorsque la source ou le personnage change. */
+  /** Resets smoothing and the origin when the source or character changes. */
   reset() {
     this.baseline = null;
     this.previous = null;
   }
-  /** dt en secondes ; tau=0 désactive le lissage. Retourne null si le bassin est occulté. */
+  /** Uses a time delta in seconds. A time constant of zero disables smoothing. Returns null if the hips are occluded. */
   solve(sample: PoseSample, rig: CharacterRig, dt: number): RigPose | null {
     const torso = torsoOrientation(sample.world);
     if (!torso) return null;

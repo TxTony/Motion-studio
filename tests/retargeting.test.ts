@@ -1,7 +1,7 @@
-/** Caractérise le repère, l’occultation et le filtre sur un vrai rig procédural hors WebGL. */
+/** Tests coordinate conversion, occlusion, and smoothing on a procedural rig without WebGL. */
 import { describe, it, expect } from "vitest";
 import { Quaternion } from "three";
-import { createGoblin } from "../src/infrastructure/three/CharacterRenderer";
+import { createDefaultCharacter } from "../src/infrastructure/three/CharacterRenderer";
 import { Retargeting } from "../src/infrastructure/retargeting/Retargeting";
 import {
   demoSample,
@@ -11,14 +11,14 @@ import {
 import { jointNames } from "../src/domain/studio";
 
 describe("Retargeting", () => {
-  it("convertit Y vers le haut et préserve la profondeur relative", () => {
+  it("converts to Y-up coordinates and preserves relative depth", () => {
     expect(point({ x: 1, y: 2, z: 3 }).toArray()).toEqual([1, -2, -3]);
     expect(
       torsoOrientation(demoSample(0).world)!.angleTo(new Quaternion()),
     ).toBeCloseTo(0);
   });
-  it("produit des quaternions normalisés et suit les mouvements", () => {
-    const rig = createGoblin(),
+  it("produces normalized quaternions and follows motion", () => {
+    const rig = createDefaultCharacter(),
       r = new Retargeting();
     r.smoothing = 0;
     const a = structuredClone(r.solve(demoSample(0), rig, 1 / 30)!);
@@ -27,15 +27,19 @@ describe("Retargeting", () => {
       expect(Math.hypot(...b.rotations[n])).toBeCloseTo(1);
     expect(b.rotations.leftLowerArm).not.toEqual(a.rotations.leftLowerArm);
   });
-  it("lisse sans figer le mouvement et converge vers la cible", () => {
-    const rig = createGoblin(),
+  it("smooths motion while converging to the target", () => {
+    const rig = createDefaultCharacter(),
       r = new Retargeting();
     const a = structuredClone(r.solve(demoSample(0), rig, 1 / 30)!);
     const b = structuredClone(r.solve(demoSample(1), rig, 1 / 30)!);
     expect(b.rotations.leftUpperArm).not.toEqual(a.rotations.leftUpperArm);
     const direct = new Retargeting();
     direct.smoothing = 0;
-    const target = direct.solve(demoSample(1), createGoblin(), 1 / 30)!;
+    const target = direct.solve(
+      demoSample(1),
+      createDefaultCharacter(),
+      1 / 30,
+    )!;
     const angle = (p: typeof a) =>
       new Quaternion()
         .fromArray(p.rotations.leftUpperArm)
@@ -46,8 +50,8 @@ describe("Retargeting", () => {
     for (let i = 0; i < 80; i++) end = r.solve(demoSample(1), rig, 1 / 30)!;
     expect(angle(end)).toBeLessThan(0.0001);
   });
-  it("ignore un bassin occulté et maintient un membre invisible", () => {
-    const rig = createGoblin(),
+  it("skips an occluded pelvis and holds an occluded limb in place", () => {
+    const rig = createDefaultCharacter(),
       r = new Retargeting(),
       sample = demoSample(0);
     sample.world[23].visibility = 0;
@@ -59,8 +63,8 @@ describe("Retargeting", () => {
       a.rotations.leftLowerArm,
     );
   });
-  it("recentre le déplacement expérimental et le désactive par défaut", () => {
-    const rig = createGoblin(),
+  it("re-centers experimental root motion and leaves it disabled by default", () => {
+    const rig = createDefaultCharacter(),
       r = new Retargeting();
     r.smoothing = 0;
     r.captureRoot = true;

@@ -1,16 +1,16 @@
-/** Règle locale limitée : exige un commentaire d’intention pour les fonctions nommées des sources. */
+/** Requires intent comments on named source functions through a focused local lint rule. */
 export const intentRule = {
   meta: {
     type: "suggestion",
     schema: [],
     messages: {
-      missing: "Décrire brièvement l’intention de cette fonction nommée.",
+      missing: "Briefly describe the intent of this named function.",
     },
   },
-  /** Analyse les déclarations nommées, sans imposer de commentaire aux callbacks triviaux. */
+  /** Inspects named declarations without requiring comments on trivial callbacks. */
   create(context) {
     const source = context.sourceCode;
-    /** Recherche le commentaire associé à la déclaration, y compris devant un export. */
+    /** Finds the declaration's intent comment, including comments before an export. */
     function requireIntent(node) {
       let target = node;
       if (target.type === "VariableDeclarator") target = target.parent;
@@ -26,7 +26,7 @@ export const intentRule = {
     return {
       FunctionDeclaration: requireIntent,
       MethodDefinition: requireIntent,
-      /** Identifie les fonctions fléchées qui constituent des contrats nommés. */
+      /** Identifies arrow functions exposed through named declarations. */
       VariableDeclarator(node) {
         if (
           ["ArrowFunctionExpression", "FunctionExpression"].includes(

@@ -1,8 +1,9 @@
-/** Vue Three.js et adaptateur de rig : les captures ne connaissent ni maillages ni fichiers GLB. */
+/** Three.js view and rig adapter. Exposes a pose interface for procedural characters and GLB models. */
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { jointNames, type JointName, type RigPose } from "../../domain/studio";
+import { defaultCharacterRigId } from "../characters/default-character-identity";
 
 export interface RigJoint {
   node: THREE.Object3D;
@@ -16,7 +17,7 @@ export interface CharacterRig {
   basePosition: THREE.Vector3;
   joints: Record<JointName, RigJoint>;
 }
-/** Construit un matériau partagé par les segments procéduraux de même finition. */
+/** Builds a material shared by procedural parts with the same finish. */
 const material = (color: number, metalness = 0, roughness = 0.7) =>
   new THREE.MeshStandardMaterial({
     color,
@@ -25,8 +26,8 @@ const material = (color: number, metalness = 0, roughness = 0.7) =>
     flatShading: true,
   });
 
-/** Gobelin low-poly original, hiérarchie articulée sans asset externe. Les membres visent -Y. */
-export function createGoblin(): CharacterRig {
+/** Builds an articulated low-poly character from geometry. Limbs point along negative Y. */
+export function createDefaultCharacter(): CharacterRig {
   const root = new THREE.Group();
   const green = material(0x819b3b),
     darkGreen = material(0x56682c),
@@ -37,7 +38,7 @@ export function createGoblin(): CharacterRig {
     ivory = material(0xe4d8ad),
     lens = material(0x8bddd5, 0.5, 0.2);
   const nodes = {} as Record<JointName, THREE.Group>;
-  /** Attache un segment géométrique avec ses ombres et sa position locale. */
+  /** Attaches a mesh at its local position and enables shadows. */
   const mesh = (
     parent: THREE.Object3D,
     geometry: THREE.BufferGeometry,
@@ -51,7 +52,7 @@ export function createGoblin(): CharacterRig {
     parent.add(m);
     return m;
   };
-  /** Dimensionne une sphère pour former un volume anatomique low-poly. */
+  /** Scales a sphere into a low-poly body part. */
   const sphere = (
     p: THREE.Object3D,
     pos: number[],
@@ -62,7 +63,7 @@ export function createGoblin(): CharacterRig {
     segment.scale.fromArray(s);
     return segment;
   };
-  /** Ajoute une pièce rigide d’équipement aux dimensions locales données. */
+  /** Adds a rigid piece of equipment with the given local dimensions. */
   const box = (
     p: THREE.Object3D,
     pos: number[],
@@ -75,7 +76,7 @@ export function createGoblin(): CharacterRig {
       mat,
       pos,
     );
-  /** Déclare un pivot nommé dans la hiérarchie utilisée par le retargeting. */
+  /** Adds a named pivot to the retargeting hierarchy. */
   const joint = (name: JointName, parent: THREE.Object3D, pos: number[]) => {
     const g = new THREE.Group();
     g.name = name;
@@ -180,7 +181,7 @@ export function createGoblin(): CharacterRig {
     box(shin, [0, -0.43, 0.08], [0.29, 0.2, 0.42], black);
     box(shin, [0, -0.39, 0.19], [0.3, 0.08, 0.22], steel);
   }
-  // Clé à molette fixée à la ceinture.
+  // Wrench attached to the belt.
   const wrench = new THREE.Group();
   hips.add(wrench);
   wrench.position.set(0.35, -0.05, 0.04);
@@ -205,7 +206,7 @@ export function createGoblin(): CharacterRig {
       ),
     };
   return {
-    id: "goblin-mechanic-v1",
+    id: defaultCharacterRigId,
     root,
     motionRoot: hips,
     basePosition: hips.position.clone(),
@@ -218,9 +219,9 @@ export class CharacterRenderer {
   readonly camera = new THREE.PerspectiveCamera(36, 1, 0.05, 100);
   readonly renderer: THREE.WebGLRenderer;
   readonly controls: OrbitControls;
-  rig = createGoblin();
+  rig = createDefaultCharacter();
   private observer: ResizeObserver;
-  /** Monte une scène orbitale dans le conteneur possédé par le viewer Vue. */
+  /** Mounts an orbitable scene in the container owned by the Vue viewer. */
   constructor(container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -231,7 +232,7 @@ export class CharacterRenderer {
     this.renderer.toneMappingExposure = 1.2;
     this.renderer.domElement.setAttribute(
       "aria-label",
-      "Vue 3D orbitale du personnage",
+      "Orbitable 3D character view",
     );
     container.append(this.renderer.domElement);
     this.camera.position.set(3, 2.1, 5.9);
@@ -273,7 +274,7 @@ export class CharacterRenderer {
     });
     this.observer.observe(container);
   }
-  /** Applique les rotations locales et l’offset de racine au rig courant. */
+  /** Applies local rotations and root offset to the current rig. */
   apply(pose: RigPose) {
     this.rig.motionRoot.position
       .copy(this.rig.basePosition)
@@ -281,23 +282,23 @@ export class CharacterRenderer {
     for (const name of jointNames)
       this.rig.joints[name].node.quaternion.fromArray(pose.rotations[name]);
   }
-  /** Met à jour l’amortissement orbital puis dessine l’image courante. */
+  /** Updates orbit damping and draws the current frame. */
   render() {
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }
-  /** Replace la caméra selon le cadrage original du gobelin. */
+  /** Restores the default character framing. */
   resetView() {
     this.camera.position.set(3, 2.1, 5.9);
     this.controls.target.set(0, 1.25, 0);
   }
-  /** GLB autonome : articulations nommées selon JointName, sans compression ni ressources externes. */
+  /** Loads a self-contained, uncompressed GLB with joints named according to JointName. */
   async loadGLB(bytes: ArrayBuffer): Promise<void> {
     const manager = new THREE.LoadingManager();
     manager.setURLModifier((url) => {
       if (!url.startsWith("blob:") && !url.startsWith("data:"))
         throw new Error(
-          "GLB autonome requis : ressources externes interdites.",
+          "Use a self-contained GLB with all resources embedded.",
         );
       return url;
     });
@@ -310,7 +311,7 @@ export class CharacterRenderer {
         const node = root.getObjectByName(name);
         if (!node)
           throw new Error(
-            `Articulation manquante : ${name}. Voir le contrat GLB du README.`,
+            `Missing joint: ${name}. See the GLB requirements in the README.`,
           );
         const child =
           node.children.find((c) => c.type === "Bone") ??
@@ -325,7 +326,7 @@ export class CharacterRenderer {
             "rightLowerLeg",
           ].includes(name)
         )
-          throw new Error(`Axe indéterminé : ${name}.`);
+          throw new Error(`Could not determine the axis for joint ${name}.`);
         joints[name] = {
           node,
           bindWorld: node.getWorldQuaternion(new THREE.Quaternion()),
@@ -339,16 +340,14 @@ export class CharacterRenderer {
         let parent = joints[name].node.parent;
         while (parent && parent !== hips) parent = parent.parent;
         if (!parent)
-          throw new Error(
-            `Hiérarchie invalide : ${name} doit descendre de hips.`,
-          );
+          throw new Error(`Invalid hierarchy: ${name} must descend from hips.`);
       }
       const size = new THREE.Box3()
         .setFromObject(root)
         .getSize(new THREE.Vector3());
       if (size.y < 0.01 || size.y > 100)
         throw new Error(
-          "Échelle GLB invalide ; utiliser des mètres (personnage de 1 à 3 m).",
+          "Invalid GLB scale. Use meters for a character 1 to 3 m tall.",
         );
       const old = this.rig;
       this.scene.remove(old.root);
@@ -366,7 +365,7 @@ export class CharacterRenderer {
       throw error;
     }
   }
-  /** Libère les géométries et matériaux de la hiérarchie dont ce renderer est propriétaire. */
+  /** Disposes geometries and materials in the renderer-owned hierarchy. */
   private disposeModel(root: THREE.Object3D) {
     root.traverse((o) => {
       if (o instanceof THREE.Mesh) {
@@ -376,7 +375,7 @@ export class CharacterRenderer {
       }
     });
   }
-  /** Déconnecte le redimensionnement, les contrôles et les ressources de rendu au démontage. */
+  /** Disconnects resize handling and disposes controls and rendering resources on unmount. */
   dispose() {
     this.observer.disconnect();
     this.controls.dispose();

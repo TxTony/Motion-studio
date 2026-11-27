@@ -1,4 +1,4 @@
-/** Configure la compilation Vue et les chunks moteur sans changer la base Pages. */
+/** Configures Vue compilation and engine chunks while preserving the Pages base path. */
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
 

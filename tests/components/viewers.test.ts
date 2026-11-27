@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-/** Caractérise la propriété des viewers Vue : montage unique, erreur lisible et nettoyage au démontage. */
+/** Characterizes Vue viewer ownership: a single mount, readable errors and cleanup on unmount. */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 const mocks = vi.hoisted(() => ({
@@ -36,33 +36,35 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe("viewers", () => {
-  it("monte un renderer et le détruit une seule fois", () => {
+  it("mounts a renderer and disposes it exactly once", () => {
     const wrapper = mount(Scene3DViewer, {
-      props: { name: "Gobelin", kind: "Procédural" },
+      props: { name: "Default character", kind: "Procedural rig" },
     });
     expect(wrapper.emitted("ready")).toHaveLength(1);
     expect(mocks.construct).toHaveBeenCalledOnce();
     wrapper.unmount();
     expect(mocks.dispose).toHaveBeenCalledOnce();
   });
-  it("signale WebGL indisponible sans prétendre une scène prête", () => {
+  it("reports unavailable WebGL without claiming that the scene is ready", () => {
     mocks.construct.mockImplementationOnce(() => {
       throw new Error("WebGL");
     });
     const wrapper = mount(Scene3DViewer, {
-      props: { name: "Gobelin", kind: "Procédural" },
+      props: { name: "Default character", kind: "Procedural rig" },
     });
     expect(wrapper.emitted("ready")).toBeUndefined();
-    expect(wrapper.emitted("error")?.[0]?.[0]).toContain("WebGL indisponible");
+    expect(wrapper.emitted("error")?.[0]?.[0]).toContain(
+      "WebGL is unavailable",
+    );
     wrapper.unmount();
   });
-  it("expose la vidéo et détache l’observer de l’overlay", () => {
+  it("exposes the video and disconnects the overlay observer", () => {
     const wrapper = mount(MotionCaptureViewer, {
       props: {
         sample: null,
         source: "camera",
         facing: "user",
-        caption: "Recherche",
+        caption: "Searching",
         fps: 30,
       },
     });

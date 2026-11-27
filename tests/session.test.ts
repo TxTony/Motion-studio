@@ -1,4 +1,4 @@
-/** Vérifie les transitions du studio sans caméra, Vue ni contexte WebGL. */
+/** Tests studio transitions without a camera, Vue, or WebGL. */
 import { describe, it, expect, vi } from "vitest";
 import { StudioSession } from "../src/application/StudioSession";
 import type { SessionRuntime } from "../src/application/ports";
@@ -9,7 +9,7 @@ import {
   type RigPose,
 } from "../src/domain/studio";
 
-/** Fournit une pose neutre indépendante du moteur graphique. */
+/** Provides a neutral pose independent of the graphics engine. */
 function pose(): RigPose {
   return {
     root: [0, 0, 0],
@@ -19,7 +19,7 @@ function pose(): RigPose {
   };
 }
 
-/** Maintient une opération en attente jusqu’à la réponse dictée par le scénario. */
+/** Lets the test control when an operation resolves or rejects. */
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason: Error) => void;
@@ -30,14 +30,14 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-/** Simule les adaptateurs avec une horloge contrôlable par le scénario. */
+/** Creates mock adapters with a clock controlled by the test. */
 function setup() {
   let now = 1000;
-  let rigId = "goblin";
+  let rigId = "test-rig";
   const clip: AnimationClip = {
     format: "motion-studio",
     version: 1,
-    name: "Démo",
+    name: "Demo",
     rig: rigId,
     fps: 30,
     duration: 1,
@@ -88,26 +88,25 @@ function setup() {
 }
 
 describe("StudioSession", () => {
-  it("remplace une erreur par une information et ignore les messages après destruction", async () => {
+  it("replaces an error with an informational message and ignores reports after disposal", async () => {
     const { session } = setup();
-    session.reportError("Import refusé");
+    session.reportError("Import failed");
     expect(session.snapshot.status).toEqual({
-      message: "Import refusé",
+      message: "Import failed",
       error: true,
     });
 
-    const message =
-      "Clip JSON exporté. Les vidéos ne sont jamais enregistrées.";
+    const message = "JSON clip exported. Videos are never recorded.";
     session.reportInfo(message);
     expect(session.snapshot.status).toEqual({ message, error: false });
 
     await session.dispose();
-    session.reportInfo("Information tardive");
-    session.reportError("Erreur tardive");
+    session.reportInfo("Late information");
+    session.reportError("Late error");
     expect(session.snapshot.status).toEqual({ message, error: false });
   });
 
-  it("démarre en démo temps réel avec le clip de démonstration sélectionné", () => {
+  it("starts in live demo mode with the demo clip selected", () => {
     const { session, runtime, advance, clip } = setup();
     expect(session.snapshot).toMatchObject({
       source: "demo",
@@ -125,10 +124,10 @@ describe("StudioSession", () => {
     expect(runtime.createDemoClip).toHaveBeenCalledOnce();
   });
 
-  it("enregistre la démo et sélectionne le nouveau clip dans une nouvelle liste", () => {
+  it("records the demo, replaces the library array, and selects the new clip", () => {
     const { session, runtime, advance } = setup();
     const previousClips = session.snapshot.clips;
-    session.configure({ clipName: " Essai ", fps: 15 });
+    session.configure({ clipName: " Sample ", fps: 15 });
     session.startRecording();
     advance(0);
     advance(40);
@@ -140,7 +139,7 @@ describe("StudioSession", () => {
     expect(previousClips).toHaveLength(1);
     expect(session.snapshot.clips).toHaveLength(2);
     expect(session.snapshot.selectedClip).toMatchObject({
-      name: "Essai",
+      name: "Sample",
       fps: 15,
     });
     expect(
@@ -153,7 +152,7 @@ describe("StudioSession", () => {
     });
   });
 
-  it("bloque les changements incompatibles pendant une capture", async () => {
+  it("blocks conflicting commands during recording", async () => {
     const { session, runtime, clip } = setup();
     session.startRecording();
     session.selectClip(clip);
@@ -168,7 +167,7 @@ describe("StudioSession", () => {
     );
     session.importClip({ ...clip, name: "Imported" });
     session.configure({
-      clipName: "Autre",
+      clipName: "Other",
       facing: "environment",
       captureRoot: true,
       fps: 15,
@@ -193,7 +192,7 @@ describe("StudioSession", () => {
     expect(runtime.loadCharacter).not.toHaveBeenCalled();
   });
 
-  it("conserve le clip à la limite de cinq minutes, même sans nouvelle image ensuite", () => {
+  it("keeps the clip at the five-minute limit even if no further frames arrive", () => {
     const { session, runtime, advance } = setup();
     session.startRecording();
     advance(0);
@@ -205,7 +204,7 @@ describe("StudioSession", () => {
     expect(session.snapshot.selectedClip?.duration).toBe(300);
   });
 
-  it("ignore un succès caméra arrivé après annulation", async () => {
+  it("ignores a successful camera response after cancellation", async () => {
     const { session, runtime } = setup();
     const camera = deferred<boolean>();
     vi.mocked(runtime.startCamera).mockReturnValueOnce(camera.promise);
@@ -222,7 +221,7 @@ describe("StudioSession", () => {
     });
   });
 
-  it("ignore une erreur caméra tardive pendant une seconde demande", async () => {
+  it("ignores a late camera error while a second request is pending", async () => {
     const { session, runtime } = setup();
     const first = deferred<boolean>();
     const second = deferred<boolean>();
@@ -233,7 +232,7 @@ describe("StudioSession", () => {
     session.useDemo();
     session.configure({ facing: "environment" });
     const newRequest = session.startCamera();
-    first.reject(new Error("Ancienne demande"));
+    first.reject(new Error("Previous request"));
     await oldRequest;
     expect(session.snapshot).toMatchObject({
       busy: true,
@@ -251,7 +250,7 @@ describe("StudioSession", () => {
     });
   });
 
-  it("conserve le squelette sans nouvelle image, l’efface sans corps et bloque après 750 ms", async () => {
+  it("holds the overlay between frames, clears it without a body, and blocks recording after 750 ms", async () => {
     const { session, runtime, sample, advance } = setup();
     await session.startCamera();
     session.startRecording();
@@ -260,7 +259,7 @@ describe("StudioSession", () => {
     expect(session.snapshot).toMatchObject({
       ready: true,
       sample,
-      captureCaption: "1/33 articulations visibles",
+      captureCaption: "1/33 joints visible",
     });
     vi.mocked(runtime.sample).mockReturnValue(undefined);
     advance(100);
@@ -271,7 +270,7 @@ describe("StudioSession", () => {
     advance(1);
     expect(session.snapshot).toMatchObject({
       ready: false,
-      captureCaption: "Corps perdu · pose maintenue",
+      captureCaption: "Body out of view · holding last pose",
     });
     expect(runtime.apply).toHaveBeenCalledOnce();
     vi.mocked(runtime.sample).mockReturnValue(sample);
@@ -279,10 +278,10 @@ describe("StudioSession", () => {
     expect(session.snapshot.ready).toBe(true);
   });
 
-  it("revient en démo avec un message si la demande caméra courante échoue", async () => {
+  it("returns to demo mode and shows an error when the current camera request fails", async () => {
     const { session, runtime } = setup();
     vi.mocked(runtime.startCamera).mockRejectedValueOnce(
-      new Error("Accès refusé"),
+      new Error("Access denied"),
     );
     await session.startCamera();
     expect(session.snapshot).toMatchObject({
@@ -291,10 +290,10 @@ describe("StudioSession", () => {
       busy: false,
       status: { error: true },
     });
-    expect(session.snapshot.status.message).toContain("Accès refusé");
+    expect(session.snapshot.status.message).toContain("Access denied");
   });
 
-  it("refuse de lire un clip d’un autre rig mais conserve les clips importés", () => {
+  it("keeps imported clips in the library and blocks playback for a different rig", () => {
     const { session, clip } = setup();
     const other = { ...clip, rig: "other" };
     session.selectClip(other);
@@ -308,7 +307,7 @@ describe("StudioSession", () => {
     expect(session.snapshot.selectedClip).toBe(clip);
   });
 
-  it("pilote la lecture, conserve la lecture au retour au début et la pause au déplacement du curseur", () => {
+  it("keeps playing when rewinding and pauses when scrubbing", () => {
     const { session, runtime, advance } = setup();
     session.togglePlay();
     session.setSpeed(2);
@@ -330,15 +329,15 @@ describe("StudioSession", () => {
     expect(session.snapshot).toMatchObject({ mode: "live", playing: false });
   });
 
-  it("réserve le chargement GLB et remet la sélection à zéro après remplacement du rig", async () => {
+  it("blocks competing loads and clears selection after a successful GLB import", async () => {
     const { session, runtime, clip } = setup();
     const glb = deferred<void>();
     vi.mocked(runtime.loadCharacter).mockReturnValueOnce(glb.promise);
     const bytes = new ArrayBuffer(2);
-    const pending = session.importCharacter(bytes, "glb-id", "gobelin.glb");
+    const pending = session.importCharacter(bytes, "glb-id", "character.glb");
     session.useDemo();
     await session.startCamera();
-    await session.importCharacter(bytes, "second", "autre.glb");
+    await session.importCharacter(bytes, "second", "other.glb");
     expect(session.snapshot.busy).toBe(true);
     expect(runtime.loadCharacter).toHaveBeenCalledExactlyOnceWith(
       bytes,
@@ -353,27 +352,31 @@ describe("StudioSession", () => {
       selectedClip: null,
       time: 0,
       clips: [clip],
-      characterName: "gobelin.glb",
-      characterKind: "Personnage GLB importé",
+      characterName: "character.glb",
+      characterKind: "Imported GLB character",
     });
   });
 
-  it("conserve le rig et la sélection si le chargement GLB échoue", async () => {
+  it("keeps the current rig and selection when GLB loading fails", async () => {
     const { session, runtime, clip } = setup();
     vi.mocked(runtime.loadCharacter).mockRejectedValueOnce(
-      new Error("Os manquant"),
+      new Error("Missing bone"),
     );
-    await session.importCharacter(new ArrayBuffer(0), "glb-id", "gobelin.glb");
+    await session.importCharacter(
+      new ArrayBuffer(0),
+      "glb-id",
+      "character.glb",
+    );
     expect(session.snapshot).toMatchObject({
       busy: false,
-      characterName: "Gobelin mécano",
+      characterName: "Default character",
       selectedClip: clip,
       status: { error: true },
     });
-    expect(session.snapshot.status.message).toContain("Os manquant");
+    expect(session.snapshot.status.message).toContain("Missing bone");
   });
 
-  it("suspend la caméra et termine l’enregistrement en arrière-plan", () => {
+  it("stops the camera and finishes recording when backgrounded", () => {
     const { session, runtime, advance } = setup();
     session.startRecording();
     advance(0);
@@ -388,7 +391,7 @@ describe("StudioSession", () => {
     expect(session.snapshot.clips).toHaveLength(2);
   });
 
-  it("libère le moteur une fois et ignore les commandes et réponses après destruction", async () => {
+  it("disposes the runtime once and ignores commands and responses after disposal", async () => {
     const { session, runtime, advance } = setup();
     const camera = deferred<boolean>();
     vi.mocked(runtime.startCamera).mockReturnValueOnce(camera.promise);

@@ -1,7 +1,7 @@
-# Coordinateur / lead
+# Coordinator / technical lead
 
-Lire AGENTS.md et l’index. Identifier l’issue et ses dépendances. Fixer les contrats à partir des données avant d’ordonner les adaptateurs, la session et la vue. Décider les choix techniques dans le périmètre autorisé ; remonter au PO les décisions produit.
+Read AGENTS.md and the project index. Identify the issue and dependencies. Define data contracts before assigning adapters, session behavior and views. Make technical decisions within the authorized scope; bring product decisions to the PO.
 
-Attribuer un mandat court : rôle à lire, issue, résultat, fichiers exclusifs, invariants, tests attendus, livrables. Utiliser un modèle développeur plus léger pour les réalisations bornées (profil prévu : gpt-6.2-sol, effort medium), et le modèle coordinateur pour les arbitrages. Consigner modèle réellement lancé et passages de relais dans l’issue. Vérifier les sorties ; ne pas traiter un résumé comme preuve primaire.
+Provide a short mandate: role file, issue, outcome, exclusive files, invariants, tests and deliverables. Use a lighter developer model for bounded implementation (planned profile: gpt-6.2-sol, medium effort) and the coordinator model for architectural decisions. Record the actual model and handoffs in the issue. Verify outputs; a summary is not primary evidence.
 
-Revoir le code, les tests et les raccordements. Exiger la preuve RED/GREEN, exécuter les contrôles intégrés et la recette navigateur. Synchroniser les statuts de l’index. Garder la référence figée et la publication principale inchangée pendant cette reconstruction. Ne déléguer ni le verdict produit ni l’acceptation mobile à une métrique automatisée.
+Review code, tests and integration. Require RED/GREEN evidence, run integrated checks and perform browser acceptance checks. Synchronize index statuses. Preserve the frozen reference and current public deployment during reconstruction. Automated metrics do not replace product acceptance or real-device feedback. Enforce English throughout maintained project text and character-independent engine naming.

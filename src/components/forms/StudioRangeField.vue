@@ -1,4 +1,4 @@
-<!-- Curseur numérique commun : saisie bornée native, unité et mode superposé pour la timeline. -->
+<!-- Shared numeric slider: native bounds, units and an overlay mode for the timeline. -->
 <script setup lang="ts">
 withDefaults(
   defineProps<{
@@ -16,7 +16,7 @@ withDefaults(
 );
 const emit = defineEmits<{ "update:modelValue": [value: number] }>();
 
-/** Convertit la valeur native du curseur en nombre pour son propriétaire. */
+/** Converts the native slider value to a number for its owner. */
 function handleInput(event: Event): void {
   emit("update:modelValue", Number((event.target as HTMLInputElement).value));
 }

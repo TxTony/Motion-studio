@@ -1,11 +1,43 @@
-/** Vérifie les frontières et conventions de rangement indépendamment du moteur de lint. */
-/** Retourne les violations ciblées d’un fichier sans modifier son contenu. */
+/** Checks architectural boundaries and file placement independently of the lint engine. */
+import ts from "typescript";
+
+const browserIdentifiers = new Set([
+  "window",
+  "document",
+  "navigator",
+  "HTMLElement",
+  "HTMLVideoElement",
+  "Blob",
+  "File",
+]);
+
+/** Detects actual browser identifiers while ignoring comments and string literals. */
+function usesBrowserApi(file, source) {
+  const sourceFile = ts.createSourceFile(
+    file,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+  let found = false;
+  /** Visits syntax nodes without interpreting prose as program references. */
+  function visit(node) {
+    if (ts.isIdentifier(node) && browserIdentifiers.has(node.text))
+      found = true;
+    else if (!found) ts.forEachChild(node, visit);
+  }
+  visit(sourceFile);
+  return found;
+}
+
+/** Returns targeted violations without changing the inspected source. */
 export function inspectSource(file, source) {
   const errors = [];
   if (!source.trimStart().startsWith(file.endsWith(".vue") ? "<!--" : "/**"))
-    errors.push("En-tête de responsabilité absent.");
+    errors.push("Missing responsibility header.");
   if (source.trimEnd().split(/\r?\n/).length > 500)
-    errors.push("Plus de 500 lignes dans un fichier TS/Vue.");
+    errors.push("TypeScript/Vue files must not exceed 500 lines.");
   const imports = Array.from(
     source.matchAll(/\b(?:from|import)\s*['"]([^'"]+)['"]/g),
     (match) => match[1],
@@ -20,7 +52,7 @@ export function inspectSource(file, source) {
           ),
       )
     )
-      errors.push("Le domaine ne dépend que de ses propres modules.");
+      errors.push("The domain may depend only on its own modules.");
   }
   if (file.startsWith("src/application/")) {
     if (
@@ -31,32 +63,26 @@ export function inspectSource(file, source) {
       )
     )
       errors.push(
-        "L’application dépend du domaine et de ses ports uniquement.",
+        "The application may depend only on the domain and its ports.",
       );
   }
-  const code = source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
-  if (
-    /^src\/(domain|application)\//.test(file) &&
-    /\b(window|document|navigator|HTMLElement|HTMLVideoElement|Blob|File)\b/.test(
-      code,
-    )
-  )
-    errors.push("API navigateur interdite dans le cœur testable.");
+  if (/^src\/(domain|application)\//.test(file) && usesBrowserApi(file, source))
+    errors.push("Browser APIs are not allowed in the testable core.");
   if (file.endsWith(".vue")) {
     if (/<button\b/i.test(source) && !file.startsWith("src/components/core/"))
-      errors.push("Utiliser StudioButton ; bouton natif réservé à core.");
+      errors.push("Use StudioButton; native buttons belong in core.");
     if (
       /<(input|textarea)\b/i.test(source) &&
       !file.startsWith("src/components/forms/")
     )
-      errors.push("Champ natif réservé à components/forms.");
+      errors.push("Native fields belong in components/forms.");
     if (
       /<select\b/i.test(source) &&
       !file.startsWith("src/components/selectors/")
     )
-      errors.push("Sélecteur natif réservé à components/selectors.");
+      errors.push("Native selectors belong in components/selectors.");
   }
   if (/\bv-html\b|\binnerHTML\s*=/.test(source))
-    errors.push("Composer la vue avec des composants, sans HTML généré.");
+    errors.push("Compose views with components instead of generated HTML.");
   return errors;
 }

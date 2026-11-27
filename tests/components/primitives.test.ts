@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-/** Vérifie les contrats publics des primitives Vue, sans état métier ni moteur graphique. */
+/** Verifies the public contracts of Vue primitives without business state or a graphics engine. */
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import StudioButton from "../../src/components/core/StudioButton.vue";
@@ -11,24 +11,24 @@ import StudioFileInput from "../../src/components/forms/StudioFileInput.vue";
 import StudioSelect from "../../src/components/selectors/StudioSelect.vue";
 
 describe("StudioButton", () => {
-  it("conserve la variante, les attributs accessibles et le contenu sans soumettre un formulaire", async () => {
+  it("preserves the variant, accessible attributes and content without submitting a form", async () => {
     const wrapper = mount(StudioButton, {
       props: { variant: "record", selected: true },
-      attrs: { "aria-label": "Capturer", title: "Nouvelle capture" },
-      slots: { default: "Enregistrer" },
+      attrs: { "aria-label": "Capture", title: "New capture" },
+      slots: { default: "Record" },
     });
     expect(wrapper.classes()).toEqual(
       expect.arrayContaining(["record-button", "selected"]),
     );
     expect(wrapper.attributes("type")).toBe("button");
-    expect(wrapper.attributes("aria-label")).toBe("Capturer");
-    expect(wrapper.attributes("title")).toBe("Nouvelle capture");
-    expect(wrapper.text()).toBe("Enregistrer");
+    expect(wrapper.attributes("aria-label")).toBe("Capture");
+    expect(wrapper.attributes("title")).toBe("New capture");
+    expect(wrapper.text()).toBe("Record");
     await wrapper.trigger("click");
     expect(wrapper.emitted("click")?.[0][0]).toBeInstanceOf(MouseEvent);
   });
 
-  it("ne transmet pas d’action lorsque le bouton est désactivé", async () => {
+  it("does not emit an action when the button is disabled", async () => {
     const wrapper = mount(StudioButton, { props: { disabled: true } });
     await wrapper.trigger("click");
     expect(wrapper.emitted("click")).toBeUndefined();
@@ -36,42 +36,42 @@ describe("StudioButton", () => {
 });
 
 describe("StudioPanel", () => {
-  it("compose son titre, son repère, ses actions et son contenu", () => {
+  it("composes its title, tag, actions and content", () => {
     const wrapper = mount(StudioPanel, {
       props: { title: "Animation", tag: "CLIP", icon: "◇" },
-      slots: { default: "Contenu métier", actions: "Actions du panneau" },
+      slots: { default: "Business content", actions: "Panel actions" },
     });
     expect(wrapper.element.tagName).toBe("SECTION");
     expect(wrapper.classes()).toContain("panel");
     expect(wrapper.get(".panel-head h2").text()).toContain("Animation");
     expect(wrapper.get(".panel-icon").text()).toBe("◇");
     expect(wrapper.get(".tag").text()).toBe("CLIP");
-    expect(wrapper.text()).toContain("Contenu métier");
-    expect(wrapper.get(".panel-head").text()).toContain("Actions du panneau");
+    expect(wrapper.text()).toContain("Business content");
+    expect(wrapper.get(".panel-head").text()).toContain("Panel actions");
   });
 });
 
-describe("Champs de formulaire", () => {
-  it("associe le texte à son label et émet une valeur texte sans l’interpréter", async () => {
+describe("Form fields", () => {
+  it("associates text with its label and emits a string without interpreting it", async () => {
     const wrapper = mount(StudioTextField, {
       props: {
         id: "clip-name",
-        label: "Nom",
+        label: "Name",
         modelValue: "Capture",
         maxlength: 80,
       },
     });
     expect(wrapper.get("label").attributes("for")).toBe("clip-name");
     expect(wrapper.get("input").attributes("maxlength")).toBe("80");
-    await wrapper.get("input").setValue("Marche");
-    expect(wrapper.emitted("update:modelValue")).toEqual([["Marche"]]);
+    await wrapper.get("input").setValue("Walk");
+    expect(wrapper.emitted("update:modelValue")).toEqual([["Walk"]]);
   });
 
-  it("émet un nombre pour une plage et présente son unité", async () => {
+  it("emits a number for a slider and presents its unit", async () => {
     const wrapper = mount(StudioRangeField, {
       props: {
         id: "smoothing",
-        label: "Lissage",
+        label: "Smoothing",
         modelValue: 120,
         min: 0,
         max: 400,
@@ -84,11 +84,11 @@ describe("Champs de formulaire", () => {
     expect(wrapper.emitted("update:modelValue")).toEqual([[240]]);
   });
 
-  it("garde un curseur superposé accessible sans afficher un second libellé", () => {
+  it("keeps an overlay slider accessible without displaying a second label", () => {
     const wrapper = mount(StudioRangeField, {
       props: {
         id: "scrubber",
-        label: "Position en secondes",
+        label: "Position in seconds",
         modelValue: 0,
         min: 0,
         max: 6,
@@ -98,15 +98,15 @@ describe("Champs de formulaire", () => {
     expect(wrapper.classes()).toContain("range-overlay");
     expect(wrapper.get("input").classes()).toContain("timeline-scrubber");
     expect(wrapper.get("input").attributes("aria-label")).toBe(
-      "Position en secondes",
+      "Position in seconds",
     );
     expect(wrapper.find("label").exists()).toBe(false);
     expect(wrapper.find("output").exists()).toBe(false);
   });
 
-  it("émet un booléen pour une option et applique l’état désactivé", async () => {
+  it("emits a boolean for an option and applies the disabled state", async () => {
     const wrapper = mount(StudioCheckbox, {
-      props: { id: "root", label: "Déplacement", modelValue: false },
+      props: { id: "root", label: "Movement", modelValue: false },
     });
     await wrapper.get("input").setValue(true);
     expect(wrapper.emitted("update:modelValue")).toEqual([[true]]);
@@ -118,15 +118,15 @@ describe("Champs de formulaire", () => {
 });
 
 describe("StudioSelect", () => {
-  it("présente des options numériques mais émet la chaîne native du sélecteur", async () => {
+  it("presents numeric options while emitting the native selector string", async () => {
     const wrapper = mount(StudioSelect, {
       props: {
         id: "fps",
-        label: "Fréquence",
+        label: "Frequency",
         modelValue: 30,
         options: [
-          { label: "30 images/s", value: 30 },
-          { label: "15 images/s", value: 15 },
+          { label: "30 frames/s", value: 30 },
+          { label: "15 frames/s", value: 15 },
         ],
       },
     });
@@ -138,11 +138,11 @@ describe("StudioSelect", () => {
     expect(wrapper.emitted("update:modelValue")).toEqual([["15"]]);
   });
 
-  it("préserve le nom accessible en présentation compacte", () => {
+  it("preserves the accessible name in compact presentation", () => {
     const wrapper = mount(StudioSelect, {
       props: {
         id: "speed",
-        label: "Vitesse",
+        label: "Speed",
         modelValue: 1,
         options: [{ label: "1×", value: 1 }],
         compact: true,
@@ -150,7 +150,7 @@ describe("StudioSelect", () => {
       },
     });
     expect(wrapper.find("label").exists()).toBe(false);
-    expect(wrapper.get("select").attributes("aria-label")).toBe("Vitesse");
+    expect(wrapper.get("select").attributes("aria-label")).toBe("Speed");
     expect((wrapper.get("select").element as HTMLSelectElement).disabled).toBe(
       true,
     );
@@ -158,9 +158,9 @@ describe("StudioSelect", () => {
 });
 
 describe("StudioFileInput", () => {
-  it("ouvre le sélecteur via le bouton commun et relaie le fichier sans règle métier", async () => {
+  it("opens the picker through the shared button and forwards the file without business rules", async () => {
     const wrapper = mount(StudioFileInput, {
-      props: { id: "json-import", label: "Importer", accept: ".json" },
+      props: { id: "json-import", label: "Import", accept: ".json" },
     });
     const input = wrapper.get("input").element as HTMLInputElement;
     const open = vi.spyOn(input, "click").mockImplementation(() => undefined);
@@ -185,11 +185,11 @@ describe("StudioFileInput", () => {
     open.mockRestore();
   });
 
-  it("désactive à la fois la commande et l’input fichier", () => {
+  it("disables both the action and the file input", () => {
     const wrapper = mount(StudioFileInput, {
       props: {
         id: "glb-import",
-        label: "Importer",
+        label: "Import",
         accept: ".glb",
         disabled: true,
       },

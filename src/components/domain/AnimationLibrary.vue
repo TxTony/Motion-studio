@@ -1,4 +1,4 @@
-<!-- Présente les clips de session et la sélection ; la bibliothèque reste propriété de l’application. -->
+<!-- Presents session clips and selection; the application retains library ownership. -->
 <script setup lang="ts">
 import StudioPanel from "../core/StudioPanel.vue";
 import StudioButton from "../core/StudioButton.vue";
@@ -13,11 +13,11 @@ const emit = defineEmits<{ select: [clip: AnimationClip]; create: [] }>();
 <template>
   <StudioPanel
     id="library"
-    title="Bibliothèque d’animations"
-    tag="SESSION LOCALE"
+    title="Animation library"
+    tag="LOCAL SESSION"
     class="library-panel"
     ><template #title
-      >Bibliothèque d’animations <span>{{ clips.length }}</span></template
+      >Animation library <span>{{ clips.length }}</span></template
     >
     <div class="clips">
       <StudioButton
@@ -34,7 +34,7 @@ const emit = defineEmits<{ select: [clip: AnimationClip]; create: [] }>();
           ><strong>{{ clip.name }}</strong
           ><small
             >{{ clip.duration.toFixed(2) }} s · {{ clip.frames.length }} poses{{
-              clip.name.includes("Démo") ? " · démo" : ""
+              clip.name.includes("Demo") ? " · demo" : ""
             }}</small
           ></span
         >
@@ -43,7 +43,7 @@ const emit = defineEmits<{ select: [clip: AnimationClip]; create: [] }>();
         variant="new-clip"
         :disabled="disabled"
         @click="emit('create')"
-        ><span><b>＋</b>Nouvelle capture</span></StudioButton
+        ><span><b>＋</b>New capture</span></StudioButton
       >
     </div></StudioPanel
   >

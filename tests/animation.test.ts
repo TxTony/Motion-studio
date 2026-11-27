@@ -1,4 +1,4 @@
-/** Vérifie les frontières de données et la lecture temporelle avec des poses indépendantes. */
+/** Tests clip validation and playback timing with standalone poses. */
 import { describe, it, expect, vi } from "vitest";
 import { AnimationRecorder } from "../src/domain/animation/AnimationRecorder";
 import { AnimationPlayer } from "../src/domain/animation/AnimationPlayer";
@@ -10,7 +10,7 @@ import {
 } from "../src/domain/studio";
 import { interpolateRigPose } from "../src/infrastructure/three/interpolateRigPose";
 
-/** Produit une pose neutre avec la translation demandée sur X. */
+/** Builds a neutral pose with the given X translation. */
 function pose(x = 0): RigPose {
   return {
     root: [x, 0, 0],
@@ -19,7 +19,7 @@ function pose(x = 0): RigPose {
     ) as RigPose["rotations"],
   };
 }
-/** Fournit deux images clés distantes d'une seconde. */
+/** Provides two keyframes one second apart. */
 function clip(): AnimationClip {
   return {
     format: "motion-studio",
@@ -35,10 +35,10 @@ function clip(): AnimationClip {
   };
 }
 describe("AnimationRecorder", () => {
-  it("échantillonne sans conserver de références mutables", () => {
+  it("samples poses without sharing mutable references", () => {
     const r = new AnimationRecorder(),
       p = pose();
-    r.start("Essai", "test", 30, 1000);
+    r.start("Sample", "test", 30, 1000);
     r.add(p, 1000);
     r.add(p, 1010);
     p.root[0] = 3;
@@ -49,7 +49,7 @@ describe("AnimationRecorder", () => {
     expect(c.frames[1].time).toBe(0.04);
     expect(r.recording).toBe(false);
   });
-  it("refuse un clip vide ou une seule pose et borne la durée", () => {
+  it("rejects clips with fewer than two poses and caps recording duration", () => {
     const r = new AnimationRecorder();
     r.start("", "rig", 30, 0);
     expect(r.stop()).toBeNull();
@@ -60,7 +60,7 @@ describe("AnimationRecorder", () => {
   });
 });
 describe("AnimationPlayer", () => {
-  it("délègue les poses et la fraction de lecture à l'interpolateur injecté", () => {
+  it("passes the bracketing poses and blend fraction to the injected interpolator", () => {
     const animation = clip();
     const expectedPose = pose(42);
     const interpolate = vi.fn(() => expectedPose);
@@ -76,7 +76,7 @@ describe("AnimationPlayer", () => {
     );
   });
 
-  it("interpole une translation et une rotation à mi-parcours", () => {
+  it("interpolates translation and rotation halfway through the clip", () => {
     const c = clip();
     c.frames[1].pose.rotations.head = [0, 1, 0, 0];
     const p = new AnimationPlayer(interpolateRigPose);
@@ -85,7 +85,7 @@ describe("AnimationPlayer", () => {
     expect(p.sample()!.root[0]).toBe(1);
     expect(p.sample()!.rotations.head[1]).toBeCloseTo(Math.SQRT1_2);
   });
-  it("gère boucle, vitesse, pause et fin sans boucle", () => {
+  it("handles looping, speed, pausing, and reaching the end with looping disabled", () => {
     const p = new AnimationPlayer(interpolateRigPose);
     p.load(clip());
     p.playing = true;
@@ -105,7 +105,7 @@ describe("AnimationPlayer", () => {
     p.seek(10);
     expect(p.time).toBe(1);
   });
-  it("maintient la première pose avant son premier timestamp", () => {
+  it("holds the first pose before its timestamp", () => {
     const c = clip();
     c.frames[0].time = 0.2;
     const p = new AnimationPlayer(interpolateRigPose);
@@ -114,17 +114,17 @@ describe("AnimationPlayer", () => {
   });
 });
 describe("AnimationSerializer", () => {
-  it("rejette un document JSON dont une pose est une valeur inconnue", () => {
+  it("rejects a JSON clip with an invalid pose value", () => {
     const animation = clip();
     const frames: unknown[] = [animation.frames[0], { time: 1, pose: "pose" }];
     const input: unknown = { ...animation, frames };
 
     expect(() => AnimationSerializer.parse(JSON.stringify(input))).toThrow(
-      "Clip invalide",
+      "Invalid clip",
     );
   });
 
-  it("effectue un aller-retour sans perte", () => {
+  it("round-trips a clip without data loss", () => {
     expect(
       AnimationSerializer.parse(AnimationSerializer.stringify(clip())),
     ).toEqual(clip());
@@ -136,7 +136,7 @@ describe("AnimationSerializer", () => {
     "duration",
     "missing",
     "nonfinite",
-  ])("rejette %s", (variant) => {
+  ])("rejects invalid %s", (variant) => {
     const c = clip();
     if (variant === "version") c.version = 2 as 1;
     if (variant === "quaternion")

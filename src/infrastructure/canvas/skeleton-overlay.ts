@@ -1,9 +1,9 @@
-/** Dessine les repères de capture dans le même rectangle contain que la vidéo du viewer. */
+/** Draws capture landmarks inside the same fitted rectangle as the viewer's video. */
 import type { PoseSample } from "../../domain/studio";
 import { connections } from "../retargeting/SkeletonMapping";
 import { resizeCanvas } from "./canvas-size";
 
-/** Réinitialise la surface puis projette seulement les segments et articulations visibles. */
+/** Clears the canvas and projects the visible segments and joints. */
 export function drawSkeleton(
   canvas: HTMLCanvasElement,
   sample: PoseSample | null,
@@ -20,12 +20,12 @@ export function drawSkeleton(
     vh = vw / ratio,
     ox = (width - vw) / 2,
     oy = (height - vh) / 2;
-  /** Projette un point normalisé en pixels CSS dans le rectangle vidéo. */
+  /** Projects a normalized point to CSS pixels within the video bounds. */
   const position = (index: number): [number, number] => [
     ox + sample.image[index].x * vw,
     oy + sample.image[index].y * vh,
   ];
-  /** Écarte les points sous le seuil de visibilité de la référence. */
+  /** Checks whether a landmark passes the visibility threshold. */
   const visible = (index: number) =>
     (sample.image[index]?.visibility ?? 0) > 0.5;
   ctx.lineWidth = 2;

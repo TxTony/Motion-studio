@@ -1,4 +1,4 @@
-<!-- Primitive d’action commune : variantes visuelles et événement natif sans décision métier. -->
+<!-- Shared action primitive: visual variants and native events without business decisions. -->
 <script setup lang="ts">
 type ButtonVariant =
   "primary" | "subtle" | "icon" | "record" | "clip" | "new-clip";
@@ -23,7 +23,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   "new-clip": "new-clip",
 };
 
-/** Transmet l’intention d’action uniquement si le contrôle est disponible. */
+/** Forwards an action only when the control is available. */
 function handleClick(event: MouseEvent): void {
   if (!props.disabled) emit("click", event);
 }

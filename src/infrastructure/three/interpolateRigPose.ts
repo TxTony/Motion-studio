@@ -1,8 +1,8 @@
-/** Adapte les opérations vectorielles et quaternion de Three.js au port de lecture des poses. */
+/** Adapts Three.js vector and quaternion operations to the playback interpolation port. */
 import { Quaternion, Vector3 } from "three";
 import { jointNames, type RigPose } from "../../domain/studio";
 
-/** Produit une nouvelle pose via lerp pour la racine et slerp pour les rotations locales. */
+/** Returns a new pose using lerp for the root and slerp for local rotations. */
 export function interpolateRigPose(a: RigPose, b: RigPose, t: number): RigPose {
   const rotations = {} as RigPose["rotations"];
   for (const name of jointNames)

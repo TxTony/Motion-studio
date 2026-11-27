@@ -1,4 +1,4 @@
-<!-- Sélecteur de fichier local : ouverture accessible via StudioButton et remise à zéro après choix. -->
+<!-- Local file picker: accessible opening through StudioButton and reset after selection. -->
 <script setup lang="ts">
 import { ref } from "vue";
 import StudioButton from "../core/StudioButton.vue";
@@ -12,12 +12,12 @@ const props = defineProps<{
 const emit = defineEmits<{ selected: [file: File] }>();
 const fileInput = ref<HTMLInputElement>();
 
-/** Ouvre le dialogue natif sans lire ni interpréter le fichier. */
+/** Opens the native picker without reading or interpreting the file. */
 function openFilePicker(): void {
   if (!props.disabled) fileInput.value?.click();
 }
 
-/** Transmet le premier fichier choisi et permet de choisir à nouveau le même fichier. */
+/** Emits the first selected file and allows the same file to be selected again. */
 function handleSelection(event: Event): void {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];

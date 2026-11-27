@@ -1,4 +1,4 @@
-<!-- Racine Vue : héberge la vue unique du studio sans stocker de session globale. -->
+<!-- Vue root: hosts the single studio view without storing a global session. -->
 <script setup lang="ts">
 import StudioView from "./views/StudioView.vue";
 </script>

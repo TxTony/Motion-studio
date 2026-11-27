@@ -1,34 +1,34 @@
-/** Convertit les clips v1 en JSON et valide les données décodées avant leur usage métier. */
+/** Encodes JSON v1 clips and validates decoded data before use in the studio. */
 import { jointNames, type AnimationClip } from "../studio";
 
-/** Signale que le document ne respecte pas un invariant du clip v1. */
+/** Reports a violation of the v1 clip format. */
 function fail(): never {
   throw new Error(
-    "Clip invalide : format v1, repère, temps et quaternions normalisés requis.",
+    "Invalid clip. Version 1 requires a rig, valid timing, and normalized quaternions.",
   );
 }
 
-/** Permet l’inspection des propriétés d’un objet JSON encore inconnu. */
+/** Narrows an unknown JSON value to an object with inspectable properties. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Permet l’inspection des entrées d’un tableau sans déduire leur type. */
+/** Narrows an unknown value to an array with unknown element types. */
 function isArray(value: unknown): value is unknown[] {
   return Array.isArray(value);
 }
 
-/** Vérifie qu’une valeur JSON est un nombre fini. */
+/** Checks that a JSON value is a finite number. */
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-/** Vérifie la taille et les composantes numériques d’une translation ou d’un quaternion. */
+/** Checks the size and numeric components of a translation or quaternion. */
 function isFiniteArray(value: unknown, size: number): value is number[] {
   return isArray(value) && value.length === size && value.every(isFiniteNumber);
 }
 
-/** Vérifie l’ordre du temps en secondes et les onze rotations locales avant de retenir ce temps. */
+/** Validates a keyframe timestamp in seconds and its eleven local rotations, then returns the timestamp. */
 function validateFrame(
   frame: unknown,
   duration: number,
@@ -57,7 +57,7 @@ function validateFrame(
   return frame.time;
 }
 
-/** Vérifie l’en-tête v1, les images clés et leur cohérence avec la durée déclarée. */
+/** Validates the v1 header and checks that keyframes agree with the declared duration. */
 function validateClip(value: unknown): asserts value is AnimationClip {
   if (
     !isRecord(value) ||
@@ -87,16 +87,16 @@ function validateClip(value: unknown): asserts value is AnimationClip {
 }
 
 export class AnimationSerializer {
-  /** Décode et valide une chaîne JSON, limitée à 20 millions d’unités UTF-16. */
+  /** Decodes and validates JSON of up to 20 million UTF-16 code units. */
   static parse(json: string): AnimationClip {
     if (json.length > 20_000_000)
-      throw new Error("Fichier trop volumineux (20 Mo maximum).");
+      throw new Error("File is too large (20 MB maximum).");
     const clip: unknown = JSON.parse(json);
     validateClip(clip);
     return clip;
   }
 
-  /** Encode le clip puis applique les mêmes limites que lors d’un import. */
+  /** Encodes a clip and applies the same validation as import. */
   static stringify(clip: AnimationClip): string {
     const text = JSON.stringify(clip);
     this.parse(text);

@@ -1,4 +1,4 @@
-<!-- Réunit les contrôles d’enregistrement en composants de formulaire réutilisables. -->
+<!-- Composes recording controls from reusable form components. -->
 <script setup lang="ts">
 import StudioPanel from "../core/StudioPanel.vue";
 import StudioButton from "../core/StudioButton.vue";
@@ -15,8 +15,8 @@ const emit = defineEmits<{
   stop: [];
 }>();
 const frequencies = [
-  { value: 30, label: "30 images / seconde" },
-  { value: 15, label: "15 images / seconde" },
+  { value: 30, label: "30 frames / second" },
+  { value: 15, label: "15 frames / second" },
 ];
 </script>
 <template>
@@ -24,7 +24,7 @@ const frequencies = [
     ><div class="inspector-body">
       <StudioTextField
         id="clip-name"
-        label="Nom de la capture"
+        label="Capture name"
         :model-value="state.clipName"
         :disabled="state.recording || state.busy"
         :maxlength="80"
@@ -32,9 +32,7 @@ const frequencies = [
       />
       <div class="record-status">
         <i :class="{ recording: state.recording }"></i
-        ><span>{{
-          state.recording ? "Enregistrement…" : "Prêt à enregistrer"
-        }}</span
+        ><span>{{ state.recording ? "Recording…" : "Ready to record" }}</span
         ><time>{{ timecode(state.recordingTime) }}</time>
       </div>
       <div class="button-row">
@@ -42,19 +40,19 @@ const frequencies = [
           variant="record"
           :disabled="state.recording || state.busy || !state.ready"
           @click="emit('record')"
-          >● Enregistrer</StudioButton
+          >● Record</StudioButton
         ><StudioButton
           variant="icon"
           :disabled="!state.recording"
-          aria-label="Arrêter l’enregistrement"
-          title="Arrêter l’enregistrement"
+          aria-label="Stop recording"
+          title="Stop recording"
           @click="emit('stop')"
           >■</StudioButton
         >
       </div>
       <StudioSelect
         id="record-fps"
-        label="Fréquence d’échantillonnage maximale"
+        label="Maximum sampling rate"
         :model-value="state.fps"
         :options="frequencies"
         :disabled="state.recording || state.busy"
@@ -62,7 +60,7 @@ const frequencies = [
       />
       <StudioCheckbox
         id="capture-root"
-        label="Capturer le déplacement 2D"
+        label="Capture 2D movement"
         :model-value="state.captureRoot"
         :disabled="state.recording || state.busy"
         @update:model-value="emit('configure', { captureRoot: $event })"

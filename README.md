@@ -1,110 +1,110 @@
-# Goblin Motion Studio — POC v0.1
+# Motion Studio — POC v0.1
 
-Studio web sans backend : caméra → MediaPipe Pose → retargeting → gobelin 3D → clips JSON réutilisables. Interface Vue 3 Composition API, TypeScript strict et Vite.
+Motion Studio runs in the browser. Camera frames pass through MediaPipe Pose, then retargeting drives the 3D character. The resulting poses can be saved as reusable JSON clips. The interface uses the Vue 3 Composition API, strict TypeScript, and Vite.
 
-**Référence POC publiée : https://txtony.github.io/Motion-studio/**. La reconstruction Vue est développée sur `refactor/vue3-studio` ; elle ne remplace pas le site de référence pendant sa recette. Le tag `reference/poc-v0.1` conserve le commit initial `63d03ec`. Voir [le suivi et les unités fonctionnelles](documentation/INDEX.md).
+The [published POC](https://txtony.github.io/Motion-studio/) remains available as the reference while the Vue reconstruction on `refactor/vue3-studio` goes through acceptance testing. The tag `reference/poc-v0.1` preserves the original artifact at commit `63d03ec`. See the [project tracker](documentation/INDEX.md).
 
-## Démarrage
+## Getting started
 
-Node.js 22 recommandé (minimum 22.12), npm 10 ou supérieur.
+Use Node.js 22 (minimum 22.12) and npm 10 or later.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Ouvrir l’URL affichée, avec le chemin `/Motion-studio/`. `npm ci` copie les fichiers WASM de MediaPipe dans `public/mediapipe/`. Le modèle Lite version 1 est versionné dans `public/models/` : aucune dépendance à un CDN pour l’inférence. Le premier chargement télécharge environ 18 Mo de modèle/WASM ; le navigateur peut ensuite les mettre en cache normalement. Il n’y a pas de service worker ni de garantie hors ligne.
+Open the URL printed by Vite with the path `/Motion-studio/`. The install step copies the MediaPipe WASM files to `public/mediapipe/`. The Lite model version 1 is checked in under `public/models/`, so inference can use files served with the application. The initial load downloads about 18 MB of model and WASM files. The browser can cache those files normally. The POC has no service worker or guaranteed offline mode.
 
 ```sh
-npm run test   # Vitest
-npm run build # TypeScript strict + Vite
-npm run check # architecture, ESLint, tests, types Vue/TS et build
+npm run test  # Vitest
+npm run build # Strict TypeScript and Vite
+npm run check # Architecture, ESLint, formatting, tests, Vue/TS types, and build
 npm run preview
 ```
 
-Le `.npmrc` conserve `legacy-peer-deps=true` pour éviter un crash Arborist de npm 10 lors de la résolution des dépendances optionnelles de Vitest ; le lockfile fixe les versions installées. `vue-eslint-parser` est déclaré explicitement. L’override `@vue/test-utils → js-beautify@1.14.8` retient un formateur de tests compatible hors des plages signalées par l’audit npm ; il n’entre pas dans le bundle du produit. Des dépendances transitives de cet outil de tests restent dépréciées : réexaminer ce verrou lors d’une mise à jour de Vue Test Utils, sans changement forcé non testé.
+The `.npmrc` keeps `legacy-peer-deps=true` to avoid an npm 10 Arborist crash while resolving optional Vitest dependencies. The lockfile pins the installed versions. The project declares `vue-eslint-parser` explicitly. The `@vue/test-utils → js-beautify@1.14.8` override pins a compatible test formatter outside the affected ranges reported by npm audit. The formatter stays outside the product bundle. Some of its transitive dependencies remain deprecated. Reassess this pin with the next Vue Test Utils upgrade and test any proposed change.
 
-## Utilisation
+## Using the studio
 
-1. Le studio démarre avec une **source synthétique clairement indiquée** et un clip démo de six secondes. Le personnage bouge réellement dans Three.js.
-2. Choisir caméra avant/arrière puis **Activer la caméra**. Autoriser la vidéo, cadrer une personne entière, idéalement à 2–3 m, dans une pièce éclairée. **Démo** annule aussi une demande caméra en attente.
-3. Régler le lissage (constante de temps de 0 à 400 ms). Le déplacement expérimental 2D est désactivé par défaut ; **Recentrer le déplacement** fixe une nouvelle origine.
-4. Nommer le clip, choisir 15 ou 30 poses/s au maximum, cliquer **Enregistrer** puis **Arrêter**. La fréquence effective dépend du téléphone. La capture est limitée à cinq minutes ; le POC ne complète pas les images manquantes.
-5. Lire, mettre en pause, revenir au début, déplacer la tête de lecture, choisir 0,5×/1×/2× et la boucle. Cliquer **Nouvelle capture** ou **Démo** pour revenir au temps réel.
-6. **Exporter le clip** télécharge un JSON ; **Importer** le recharge. La bibliothèque reste en mémoire : **exporter avant de recharger ou fermer la page**. Les captures de la source synthétique sont des données de démonstration, pas des mesures humaines.
+1. The studio starts with a clearly labeled synthetic source and the six-second **Workshop · Demo** clip. Three.js animates the default character.
+2. Choose the front or rear camera, then click **Enable camera**. Grant video access and frame the whole person, ideally from 2–3 m away in a well-lit room. **Demo** also cancels a pending camera request.
+3. Set smoothing with a time constant between 0 and 400 ms. Experimental 2D movement starts off. **Recenter movement** sets a new origin.
+4. Name the clip, select a maximum rate of 15 or 30 poses per second, then click **Record** and **Stop**. The effective rate depends on the device. Capture stops at five minutes. The recorder stores the frames it receives.
+5. Use **Play**, **Pause**, rewind, the playhead, the 0.5×/1×/2× speed selector, or the loop control. Click **New capture** or **Demo** to return to live mode.
+6. **Export clip** downloads a JSON file. **Import** loads it back into the studio. The library lives in memory, so export clips before reloading or closing the page. Recordings from the synthetic source contain demonstration poses.
 
-La caméra exige **HTTPS ou localhost**, WebAssembly, WebGL et `getUserMedia`. Une adresse LAN HTTP ouverte depuis un téléphone ne satisfait généralement pas cette condition : utiliser GitHub Pages en HTTPS. L’accès dépend également des permissions du navigateur et du système. Le flux est fermé en arrière-plan ou à la fermeture de la page ; sa reprise est manuelle.
+Camera access requires HTTPS or localhost, WebAssembly, WebGL, and `getUserMedia`. A phone opening an HTTP address on the local network generally needs an HTTPS deployment such as GitHub Pages for camera access. Browser and system permissions also apply. Switching to the background or closing the page stops the stream. Restart it manually.
 
-## Fonctionnalités et limites réelles
+## Features and POC limits
 
-| Domaine     | Réalisé                                                                                                      | Limite du POC                                                                                                                           |
-| ----------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Capture     | 33 points MediaPipe, squelette superposé, vidéo avant/arrière                                                | Une personne, pas de capture des doigts ni des expressions                                                                              |
-| Coordonnées | Image normalisée pour le dessin ; positions 3D estimées pour les rotations                                   | Profondeur relative estimée, aucune mesure de translation métrique dans la pièce                                                        |
-| Personnage  | Gobelin mécanicien low-poly original, 11 articulations hiérarchiques, accessoires, ombres et caméra orbitale | Géométrie procédurale rigide par segment ; pas un personnage organique à skinning                                                       |
-| Retargeting | Rotations locales par quaternions, compensation parent, filtre exponentiel indépendant du débit              | Pas de solveur IK, verrouillage des pieds, contraintes articulaires ni estimation du twist autour des membres ; tête solidaire du torse |
-| Occultation | Maintien des membres invisibles ; aucune pose enregistrée si le bassin n’est pas exploitable                 | Les trous temporels sont interpolés à la lecture ; un message indique la perte du corps                                                 |
-| Déplacement | Déplacement relatif X/Y à partir du centre des hanches dans l’image                                          | Facteur heuristique de 3 unités par largeur/hauteur normalisée ; pas de translation Z ; recadrage/éloignement influencent le résultat   |
-| Timeline    | Lecture interpolée, seek, pause, vitesse et boucle                                                           | Pistes visuelles regroupées, marqueurs échantillonnés ; pas d’édition de clés ni de montage                                             |
-| JSON        | Format v1, validation des temps/quaternions, limites de taille                                               | Clips compatibles avec le même rig ; pas de conversion universelle entre rigs                                                           |
-| GLB         | Import d’un personnage autonome respectant le contrat ci-dessous                                             | Pas d’auto-mapping Mixamo/VRM, de Draco/KTX2 ni de ressources externes                                                                  |
-| Export GLTF | Frontière `AnimationExportAdapter` prévue                                                                    | **Export GLTF/GLB d’animation non implémenté en v0.1**                                                                                  |
-| Mobile      | Mise en page responsive, commandes tactiles, OrbitControls                                                   | Débit, chauffe, latence et ressenti à qualifier sur de vrais téléphones                                                                 |
+| Area        | Implemented                                                                                                   | POC limits                                                                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Capture     | 33 MediaPipe landmarks, skeleton overlay, front and rear video                                                | One person. Fingers and facial expressions are outside scope.                                                                                  |
+| Coordinates | Normalized image coordinates for drawing and estimated 3D positions for rotations                             | Estimated relative depth. Metric movement through the room is outside scope.                                                                   |
+| Character   | Original low-poly procedural character with 11 hierarchical joints, accessories, shadows, and an orbit camera | The default character uses rigid geometry without skinning.                                                                                    |
+| Retargeting | Local quaternion rotations, parent compensation, and frame-rate-independent exponential smoothing             | The head follows the torso. IK, foot locking, joint constraints, and limb twist estimation are outside scope.                                  |
+| Occlusion   | Holds occluded limbs in place and skips recording when the pelvis is unusable                                 | Playback interpolates timing gaps. The studio displays a tracking loss message.                                                                |
+| Movement    | Relative X/Y movement from the center of the hips in the image                                                | Heuristic scaling of 3 units per normalized image width or height. Framing and camera distance affect the result. Z movement is outside scope. |
+| Timeline    | Interpolated playback, seeking, pause, speed, and loop                                                        | Grouped tracks show sampled markers. Keyframe editing and clip assembly are outside scope.                                                     |
+| JSON        | Version 1 with timestamp, quaternion, and file size validation                                                | Playback requires the matching rig.                                                                                                            |
+| GLB         | Imports a self-contained character that meets the contract below                                              | Mixamo/VRM auto-mapping, Draco/KTX2, and external resources are outside scope.                                                                 |
+| GLTF export | Defines the `AnimationExportAdapter` contract                                                                 | GLTF/GLB animation export is outside the v0.1 implementation.                                                                                  |
+| Mobile      | Responsive layout, touch controls, and OrbitControls                                                          | Frame rate, heat, latency, and usability still need evaluation on real phones.                                                                 |
 
-L’inférence CPU synchrone est limitée à 30 Hz, seulement pour une nouvelle image vidéo. Elle utilise le thread principal ; les appareils modestes peuvent ralentir. Le DPR du rendu est plafonné à 2. Une future étape pourra déplacer l’inférence dans un worker après mesures. Three.js produit un chunk d’environ 552 Ko minifié (140 Ko gzip) : l’avertissement Vite est connu.
+Synchronous CPU inference runs at up to 30 Hz and only on new video frames. It runs on the main thread and can slow down low-end devices. The renderer caps device pixel ratio at 2. Moving inference to a worker is a possible follow-up after measurement. Three.js produces a chunk of about 552 kB minified (140 kB gzip), which triggers a known Vite warning.
 
-## Personnage interchangeable
+## Interchangeable character
 
-La capture produit exclusivement `PoseSample`. `SkeletonMapping` et `Retargeting` accèdent à `CharacterRig`, pas aux maillages du gobelin. Le rendu peut donc changer sans modifier `MotionCapture`.
+Capture produces only `PoseSample`. `SkeletonMapping` and `Retargeting` work with the `CharacterRig` contract, so changes to the rendered geometry stay independent of `MotionCapture`.
 
-L’import accepte un **GLB autonome** de moins de 30 Mo. Les ressources externes sont refusées. Exporter en mètres, Y vers le haut, personnage face à +Z, dimensions de l’ordre de 1 à 3 m, avec transformations de scène appliquées, sans échelle non uniforme, et ces noms exacts et uniques :
+Import accepts a self-contained GLB under 30 MB and rejects external resources. Export characters in meters with Y up, facing +Z, and roughly 1–3 m tall. Apply scene transforms, use uniform scale, and give the following joints their exact, unique names.
 
 ```text
 hips
   spine
     head
-    leftUpperArm → leftLowerArm → extrémité de main
-    rightUpperArm → rightLowerArm → extrémité de main
-  leftUpperLeg → leftLowerLeg → extrémité de pied
-  rightUpperLeg → rightLowerLeg → extrémité de pied
+    leftUpperArm → leftLowerArm → hand tip
+    rightUpperArm → rightLowerArm → hand tip
+  leftUpperLeg → leftLowerLeg → foot tip
+  rightUpperLeg → rightLowerLeg → foot tip
 ```
 
-Tous les joints doivent descendre de `hips`. Les branches bras/jambes doivent respecter cette hiérarchie pour que les rotations locales fonctionnent. La direction du premier enfant Bone (ou premier enfant décalé) donne l’axe d’un membre. Ajouter un os terminal à chaque avant-bras/jambe ; à défaut, le POC suppose -Y pour les membres terminaux. Les axes du bassin/torse/tête doivent correspondre au repère canonique Y haut, Z frontal. Les offsets et maillages/skinning restent la propriété du modèle. Les rigs arbitraires, twists, contraintes et échelles ne sont pas convertis automatiquement.
+Every joint must descend from `hips`. The arm and leg branches must follow this hierarchy for local rotations to work. The first Bone child, or the first offset child, determines the limb axis. Add a terminal bone at each forearm and lower leg. Without one, the POC assumes -Y for the terminal limb. The hip, torso, and head axes must use the canonical Y-up, Z-forward frame. The model owns its offsets, meshes, and skinning. Rigs with arbitrary hierarchies, twist bones, constraints, or scales require manual preparation.
 
-L’identifiant des clips GLB contient le SHA-256 du fichier. Pour relire un clip après réouverture, réimporter **le même GLB**, puis le JSON. Un clip d’un autre rig est conservé en bibliothèque mais sa lecture est refusée. Le bouton **Recentrer la caméra 3D** ne recalcule pas les dimensions d’un modèle hors contrat.
+The identifier for a GLB clip includes the file's SHA-256. To play a clip after reopening the studio, import the same GLB and then the JSON. The library retains clips for other rigs and plays them once the matching rig is active. **Recenter 3D camera** restores the default framing. Imported models must meet the size and orientation requirements above. Current default character clips use `default-character-v1`. JSON import recognizes older clips for this default rig and maps them to the current ID.
 
 ## Architecture
 
-Une vue `StudioView` compose les panneaux Vue. `components/core`, `forms`, `selectors` et `domain` distinguent primitives, formulaires, sélecteurs et composants métier. Les formulaires et boutons sont encapsulés et réutilisés. `useStudioSession` raccorde les viewers à une instance de `StudioSession`, sans singleton ni réactivité profonde des objets moteur.
+`StudioView` composes the Vue panels. The `components/core`, `forms`, `selectors`, and `domain` directories hold primitives, form fields, selectors, and studio-specific components. Form fields and buttons use shared wrappers. `useStudioSession` connects the viewers to a `StudioSession` instance. Each session owns its state and keeps engine objects outside deep Vue reactivity.
 
-`domain/` contient les contrats, le recorder, le lecteur à interpolateur injecté et la validation JSON ; il ne dépend pas de Vue, Three.js, MediaPipe ou du DOM. `application/` détient les transitions et commandes avec horloge/ports injectés. `infrastructure/` contient les adaptateurs caméra, mathématiques, Three.js, fichiers et canvas. Le viewer 3D possède la destruction du renderer ; la session ferme la capture et le composable retire les écouteurs/boucle au démontage.
+`domain/` contains the contracts, recorder, player with an injected interpolator, and JSON validation. It runs independently of Vue, Three.js, MediaPipe, and the DOM. `application/` owns transitions and commands with an injected clock and ports. `infrastructure/` contains the camera, math, Three.js, file, and canvas adapters. The 3D viewer disposes of the renderer, the session closes capture, and the composable removes listeners and cancels the loop at unmount.
 
-Les commentaires d’intention, le rangement, les frontières, quatre paramètres maximum et 500 lignes maximum par TS/Vue sont contrôlés. Les mandats des agents et le cycle TDD sont dans [AGENTS.md](AGENTS.md), avec [les contrats de l’architecture](documentation/ARCHITECTURE.md) et [la référence de design](documentation/DESIGN.md).
+Project checks enforce intent comments, directory placement, dependency boundaries, at most four parameters per function, and at most 500 lines per TS/Vue file. See [contribution guidelines](AGENTS.md), [architecture contracts](documentation/ARCHITECTURE.md), and [design reference](documentation/DESIGN.md) for agent roles and the TDD workflow.
 
-| Module                               | Responsabilité                                                                         |
-| ------------------------------------ | -------------------------------------------------------------------------------------- |
-| `MotionCapture`                      | Permissions, flux vidéo, initialisation/inférence MediaPipe, libération des ressources |
-| `SkeletonMapping`                    | Repères, connexions, visibilité, orientation du bassin et source synthétique           |
-| `Retargeting`                        | Directions → quaternions locaux, lissage, translation expérimentale                    |
-| `CharacterRenderer`                  | Rig procédural/import GLB, scène Three.js, OrbitControls, rendu et nettoyage           |
-| `AnimationRecorder`                  | Échantillonnage de poses copiées et horodatées en secondes                             |
-| `AnimationPlayer`                    | Arbitrage temporel, recherche binaire, interpolation translation/slerp                 |
-| `AnimationSerializer`                | JSON versionné et validé, contrat d’export extensible                                  |
-| `StudioUI`                           | Structure de l’interface et formatage des temps                                        |
-| `StudioSession` / `useStudioSession` | Commandes testées, arbitrage live/lecture, bibliothèque et raccordement Vue            |
+| Module                               | Responsibility                                                                       |
+| ------------------------------------ | ------------------------------------------------------------------------------------ |
+| `MotionCapture`                      | Permissions, video stream, MediaPipe initialization and inference, resource cleanup  |
+| `SkeletonMapping`                    | Coordinate frames, connections, visibility, pelvis orientation, and synthetic source |
+| `Retargeting`                        | Direction-to-local-quaternion conversion, smoothing, and experimental translation    |
+| `CharacterRenderer`                  | Procedural rig and GLB import, Three.js scene, OrbitControls, rendering, and cleanup |
+| `AnimationRecorder`                  | Sampling and copying poses with timestamps in seconds                                |
+| `AnimationPlayer`                    | Playback timing, binary search, and translation/slerp interpolation                  |
+| `AnimationSerializer`                | Versioned, validated JSON and an extensible export contract                          |
+| `StudioUI`                           | Interface structure and time formatting in the reference POC                         |
+| `StudioSession` / `useStudioSession` | Tested commands, live and playback modes, library, and Vue integration               |
 
-Le JSON contient `format`, `version`, `name`, `rig`, `fps`, `duration`, puis `frames[{time,pose:{root,rotations}}]`. `root` est un offset local XYZ en unités du rig. `rotations` contient les onze quaternions locaux `[x,y,z,w]`. Les timestamps sont relatifs au début de la capture, croissants, et le dernier donne `duration`. Les premiers points peuvent arriver après t=0. La lecture maintient alors la première pose. L’export GLTF futur devra transformer ces données en `VectorKeyframeTrack`/`QuaternionKeyframeTrack`, puis en `AnimationClip` Three.js lié au rig avant `GLTFExporter` ; l’interface d’export ne promet pas cette conversion aujourd’hui.
+The JSON contains `format`, `version`, `name`, `rig`, `fps`, `duration`, and `frames[{time,pose:{root,rotations}}]`. `root` is a local XYZ offset in rig units. `rotations` holds the eleven local quaternions `[x,y,z,w]`. Timestamps increase from the start of capture. The final timestamp sets `duration`. If the first frame arrives after t=0, playback holds that first pose until its timestamp. A future GLTF exporter would convert the samples into `VectorKeyframeTrack` and `QuaternionKeyframeTrack` instances and build a Three.js `AnimationClip` bound to the rig before calling `GLTFExporter`. The current interface reserves that export boundary.
 
-## Confidentialité et ressources
+## Privacy and resources
 
-Aucune vidéo ni pose n’est envoyée par l’application. La caméra n’enregistre que les poses en mémoire lorsque l’utilisateur l’ordonne ; aucun micro n’est demandé. Les JSON/GLB sont lus localement. Le site charge ses fichiers depuis son hébergeur ; les polices Barlow Condensed et DM Sans viennent de Google Fonts (requêtes réseau habituelles, sans images caméra). Les fontes système restent disponibles si ce service ne répond pas.
+The application sends neither video nor poses. When prompted, the recorder stores only pose data in memory. Camera access requests video only. JSON and GLB files are read locally. The site loads its application files from its host and requests Barlow Condensed and DM Sans from Google Fonts. Those font requests carry no camera images. System fonts provide the fallback.
 
-Le modèle officiel est [Pose Landmarker Lite, float16, version 1](https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task), SHA-256 `59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a`. Voir [la documentation MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker) et les notices de son [dépôt officiel](https://github.com/google-ai-edge/mediapipe). Three.js est distribué sous MIT et MediaPipe sous Apache-2.0 ; conserver les notices des dépendances. Le personnage procédural est créé dans ce dépôt, sans asset artistique tiers.
+The official model is [Pose Landmarker Lite, float16, version 1](https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task), SHA-256 `59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a`. See the [MediaPipe documentation](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker) and `LICENSE` and `NOTICE` in the [official repository](https://github.com/google-ai-edge/mediapipe). Three.js uses the MIT license and MediaPipe uses Apache-2.0. Retain dependency notices. The procedural character was created in this repository without third-party art assets.
 
 ## GitHub Pages
 
-Le workflow `.github/workflows/pages.yml` exécute `npm ci` et `npm run check` (architecture, ESLint, types, tests, build). Les PR et la branche `refactor/vue3-studio` sont vérifiées sans publication. Les pushes sur `main` et le déclenchement manuel construisent et déploient `dist/` via l’environnement `github-pages`. La base Vite est `/Motion-studio/`, y compris pour le modèle et le WASM.
+The `.github/workflows/pages.yml` workflow runs `npm ci` and `npm run check` for architecture, ESLint, formatting, types, tests, and build. It checks pull requests and `refactor/vue3-studio` without publishing. Pushes to `main` and manual runs build and deploy `dist/` through the `github-pages` environment. Vite uses the base path `/Motion-studio/` for the app, model, and WASM.
 
-Dans **Settings → Pages → Build and deployment**, utiliser **GitHub Actions**. Le workflow ne requiert aucun secret applicatif : `contents: read` pour la construction, `pages: write` et `id-token: write` uniquement pour le déploiement. Si Pages n’est pas activé, un administrateur doit l’activer ; un simple droit de lecture ou une intégration GitHub retournant 403 ne suffit pas pour pousser/configurer ce dépôt.
+In **Settings → Pages → Build and deployment**, choose **GitHub Actions**. The workflow needs `contents: read` for build and `pages: write` and `id-token: write` for deployment. It uses no application secrets. If Pages is disabled, a repository administrator must enable it. Pushing and configuring Pages require permissions beyond read access, including when the GitHub integration returns 403.
 
-Voir [le rapport de migration Vue](documentation/issues/MS-007.md) et [la recette historique du POC](docs/RECETTE.md) pour distinguer les contrôles automatisés, les observations navigateur et les vérifications mobiles restantes.
+See the [Vue migration report](documentation/issues/MS-007.md) and [historical POC acceptance report](docs/POC-ACCEPTANCE.md) for automated checks, browser observations, and remaining mobile checks.

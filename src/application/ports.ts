@@ -1,4 +1,4 @@
-/** Ports de la session : données sérialisables et commandes moteur sans dépendance au navigateur. */
+/** Session ports define serializable data and engine commands independent of the browser. */
 import type { AnimationClip, PoseSample, RigPose } from "../domain/studio";
 
 export interface RetargetOptions {

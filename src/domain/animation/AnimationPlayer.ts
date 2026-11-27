@@ -1,7 +1,7 @@
-/** Pilote le temps de lecture et confie l’interpolation des poses au port injecté. */
+/** Controls playback time and delegates pose interpolation to an injected function. */
 import type { AnimationClip, RigPose } from "../studio";
 
-/** Calcule la pose à la fraction t, de 0 à 1, entre les deux poses encadrantes. */
+/** Computes the pose between two keyframes at fraction t, from 0 to 1. */
 export type PoseInterpolator = (a: RigPose, b: RigPose, t: number) => RigPose;
 
 export class AnimationPlayer {
@@ -11,22 +11,22 @@ export class AnimationPlayer {
   loop = true;
   speed = 1;
 
-  /** Associe le calcul des poses au lecteur. */
+  /** Binds the pose interpolator to the player. */
   constructor(private readonly interpolate: PoseInterpolator) {}
 
-  /** Charge un clip et replace le lecteur en pause au début. */
+  /** Loads a clip and pauses it at the beginning. */
   load(clip: AnimationClip): void {
     this.clip = clip;
     this.time = 0;
     this.playing = false;
   }
 
-  /** Déplace la tête de lecture au temps demandé en secondes, borné à la durée du clip. */
+  /** Moves the playhead to the requested time in seconds, clamped to the clip duration. */
   seek(time: number): void {
     this.time = Math.max(0, Math.min(this.clip?.duration ?? 0, time));
   }
 
-  /** Avance la lecture active du delta en secondes, en tenant compte de la vitesse et de la boucle. */
+  /** Advances active playback by the elapsed seconds, accounting for speed and looping. */
   update(delta: number): RigPose | null {
     if (this.clip && this.playing) {
       this.time += Math.max(0, delta) * this.speed;
@@ -42,7 +42,7 @@ export class AnimationPlayer {
     return this.sample();
   }
 
-  /** Cherche les images clés autour du temps de lecture et calcule leur fraction d’interpolation. */
+  /** Finds keyframes around the playhead and computes their interpolation fraction. */
   sample(): RigPose | null {
     if (!this.clip?.frames.length) return null;
     const frames = this.clip.frames;

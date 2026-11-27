@@ -1,4 +1,4 @@
-<!-- Conteneur de présentation commun : titre, repère et emplacements de composition du studio. -->
+<!-- Shared presentation container: title, tag and composition slots for the studio. -->
 <script setup lang="ts">
 defineProps<{ title: string; tag?: string; icon?: string }>();
 </script>

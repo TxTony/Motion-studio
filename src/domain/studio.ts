@@ -1,4 +1,4 @@
-/** Contrats de données du studio pour la capture, le rig et les clips JSON v1. */
+/** Studio data contracts for motion capture, character rigs, and JSON v1 clips. */
 export const jointNames = [
   "hips",
   "spine",
@@ -24,17 +24,17 @@ export interface Landmark {
 export interface PoseSample {
   image: Landmark[];
   world: Landmark[];
-  /** Horodatage de l’inférence en millisecondes. */
+  /** Inference timestamp in milliseconds. */
   timestamp: number;
 }
 export interface RigPose {
-  /** Translation de la racine XYZ. */
+  /** Root translation in XYZ order. */
   root: Vec3;
-  /** Rotations locales en quaternions XYZW. */
+  /** Local rotations as XYZW quaternions. */
   rotations: Record<JointName, Quat>;
 }
 export interface AnimationFrame {
-  /** Temps écoulé depuis le début de l’enregistrement, en secondes. */
+  /** Seconds elapsed since the recording started. */
   time: number;
   pose: RigPose;
 }
@@ -44,7 +44,7 @@ export interface AnimationClip {
   name: string;
   rig: string;
   fps: number;
-  /** Durée déclarée en secondes. L’import tolère jusqu’à 0,001 s d’écart avec la dernière image. */
+  /** Declared duration in seconds. Import allows a difference of up to 0.001 s from the last keyframe. */
   duration: number;
   frames: AnimationFrame[];
 }

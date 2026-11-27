@@ -1,4 +1,4 @@
-<!-- Sélecteur d’options commun : libellé accessible et émission de la valeur native sous forme texte. -->
+<!-- Shared option selector: accessible label and native value emitted as text. -->
 <script setup lang="ts">
 defineProps<{
   id: string;
@@ -10,7 +10,7 @@ defineProps<{
 }>();
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
-/** Remonte la valeur choisie sans décider de sa conversion métier. */
+/** Emits the selected value without deciding its business conversion. */
 function handleChange(event: Event): void {
   emit("update:modelValue", (event.target as HTMLSelectElement).value);
 }

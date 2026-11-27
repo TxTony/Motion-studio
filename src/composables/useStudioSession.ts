@@ -1,4 +1,4 @@
-/** Raccorde une session testée à Vue et au cycle de vie du navigateur, sans moteur profondément réactif. */
+/** Connects a tested session to Vue and browser lifecycle without deeply reactive engine objects. */
 import { onBeforeUnmount, onMounted, shallowRef } from "vue";
 import { StudioSession } from "../application/StudioSession";
 import type { StudioSnapshot } from "../application/ports";
@@ -13,7 +13,7 @@ import {
   readCharacterFile,
 } from "../infrastructure/files/studio-files";
 
-/** Crée un studio par montage de page et injecte ses seuls adaptateurs lorsque les viewers sont prêts. */
+/** Creates one studio per page mount and injects its adapters once the viewers are ready. */
 export function useStudioSession() {
   const state = shallowRef<StudioSnapshot | null>(null);
   const initializationError = shallowRef("");
@@ -22,17 +22,17 @@ export function useStudioSession() {
     renderer: CharacterRenderer | null = null;
   let frameId = 0,
     disposed = false;
-  /** Publie la projection courante sans convertir clips, poses et moteur en proxies profonds. */
+  /** Publishes the current snapshot without turning clips, poses or the engine into deep proxies. */
   function publish() {
     if (session) state.value = session.snapshot;
   }
-  /** Exécute une intention synchrone puis rend sa projection visible. */
+  /** Executes a synchronous intention and then publishes its snapshot. */
   function run(command: (current: StudioSession) => void) {
     if (!session) return;
     command(session);
     publish();
   }
-  /** Publie l’état occupé avant d’attendre une commande asynchrone. */
+  /** Publishes the busy state before awaiting an asynchronous command. */
   async function runAsync(command: (current: StudioSession) => Promise<void>) {
     if (!session) return;
     const pending = command(session);
@@ -40,14 +40,14 @@ export function useStudioSession() {
     await pending;
     if (!disposed) publish();
   }
-  /** Avance l’application selon l’horloge navigateur et programme une seule image suivante. */
+  /** Advances the application using the browser clock and schedules one next frame. */
   function frame(now: number) {
     if (disposed || !session) return;
     session.tick(now);
     publish();
     frameId = requestAnimationFrame(frame);
   }
-  /** Assemble une seule session dès que vidéo et scène ont été montées. */
+  /** Assembles a single session once both video and scene have mounted. */
   function connect() {
     if (session || !video || !renderer || disposed) return;
     session = new StudioSession({
@@ -58,25 +58,25 @@ export function useStudioSession() {
     publish();
     frameId = requestAnimationFrame(frame);
   }
-  /** Reçoit l’élément vidéo possédé par le viewer de capture. */
+  /** Receives the video element owned by the capture viewer. */
   function bindVideo(element: HTMLVideoElement) {
     video = element;
     connect();
   }
-  /** Reçoit le renderer possédé par le viewer 3D, sans lui transférer sa destruction. */
+  /** Receives the renderer owned by the 3D viewer without taking over its teardown. */
   function bindRenderer(value: CharacterRenderer) {
     renderer = value;
     connect();
   }
-  /** Affiche une indisponibilité de WebGL même si la session n’a pas encore pu être créée. */
+  /** Displays a WebGL initialization failure even before a session can be created. */
   function failInitialization(message: string) {
     initializationError.value = message;
   }
-  /** Ferme la source lorsque la page passe en arrière-plan. */
+  /** Closes the source when the page moves to the background. */
   function handleVisibility() {
     if (document.hidden) run((current) => current.suspend());
   }
-  /** Arrête boucle et écouteurs avant la destruction des viewers enfants. */
+  /** Stops the loop and listeners before child viewers are destroyed. */
   function cleanup() {
     if (disposed) return;
     disposed = true;
@@ -85,24 +85,24 @@ export function useStudioSession() {
     window.removeEventListener("pagehide", cleanup);
     void session?.dispose();
   }
-  /** Convertit une erreur de fichier en statut de session explicite. */
+  /** Converts a file error to an explicit session status. */
   function fileError(prefix: string, error: unknown) {
     run((current) =>
       current.reportError(
-        `${prefix} : ${error instanceof Error ? error.message : String(error)}`,
+        `${prefix}: ${error instanceof Error ? error.message : String(error)}`,
       ),
     );
   }
-  /** Valide et ajoute un JSON local sans exposer File au domaine. */
+  /** Validates and adds a local JSON clip without exposing File to the domain. */
   async function importJson(file: File) {
     try {
       const clip = await readAnimationFile(file);
       if (!disposed) run((current) => current.importClip(clip));
     } catch (error) {
-      fileError("Import refusé", error);
+      fileError("Import failed", error);
     }
   }
-  /** Identifie un GLB avant de transmettre uniquement ses octets et son nom à la session. */
+  /** Identifies a GLB before passing only its bytes and name to the session. */
   async function importGlb(file: File) {
     try {
       const character = await readCharacterFile(file);
@@ -115,22 +115,20 @@ export function useStudioSession() {
           ),
         );
     } catch (error) {
-      fileError("Import GLB refusé", error);
+      fileError("GLB import failed", error);
     }
   }
-  /** Sauvegarde le clip sélectionné via l’adaptateur local du navigateur. */
+  /** Saves the selected clip through the local browser adapter. */
   function exportJson() {
     const clip = state.value?.selectedClip;
     if (!clip || state.value?.recording) return;
     try {
       downloadAnimation(clip);
       run((current) =>
-        current.reportInfo(
-          "Clip JSON exporté. Les vidéos ne sont jamais enregistrées.",
-        ),
+        current.reportInfo("JSON clip exported. Videos are never recorded."),
       );
     } catch (error) {
-      fileError("Export refusé", error);
+      fileError("Export failed", error);
     }
   }
   onMounted(() => {

@@ -1,8 +1,8 @@
-/** Présente les quatre pistes du clip et sa tête de lecture ; aucune règle temporelle ici. */
+/** Draws the clip's four tracks and its current playhead position. */
 import type { AnimationClip } from "../../domain/studio";
 import { resizeCanvas } from "./canvas-size";
 
-/** Redessine le clip sélectionné en échantillonnant ses marqueurs pour préserver la lisibilité. */
+/** Redraws the selected clip and subsamples its keyframe markers for legibility. */
 export function drawTimeline(
   canvas: HTMLCanvasElement,
   clip: AnimationClip | null,

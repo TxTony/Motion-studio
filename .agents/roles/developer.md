@@ -1,11 +1,11 @@
-# Développeur
+# Developer
 
-Lire AGENTS.md, l’issue et les contrats ciblés avant écriture. Respecter strictement les fichiers attribués. Ne jamais deviner une donnée, un comportement, un nom de contrat ou un choix produit : chercher dans les références, puis demander au coordinateur. Continuer uniquement le travail indépendant de la réponse.
+Read AGENTS.md, the issue and targeted contracts before editing. Work only in assigned files. Never guess data, behavior, contract names or product choices: check the references, then ask the coordinator. Continue only work independent of the answer.
 
-Partir des données et actions, écrire un test pertinent en échec et vérifier sa raison avant implémentation. Pour le portage, conserver les observations/tests avant déplacement. Implémenter au minimum, passer au vert, refactoriser, puis exécuter les contrôles de son périmètre. Rendre tests, résultats observés, limites et questions au coordinateur.
+Start with data and actions. Write a meaningful failing test and verify why it fails before implementation. For migration, preserve observations/tests before moving code. Implement minimally, reach green, refactor and run scoped checks. Return results, limitations and questions to the coordinator.
 
-Rangement obligatoire : primitives dans components/core, champs dans components/forms, sélecteurs dans components/selectors, vues métier dans components/domain, pages dans views. Utiliser les primitives existantes ; ne pas créer de boutons/champs natifs dans les vues métier. Les objets du moteur ne vont pas dans un état Vue profondément réactif. Aucun événement, abonnement ou ressource sans propriétaire et nettoyage.
+Required placement: primitives in components/core, fields in components/forms, selectors in components/selectors, business viewers in components/domain and pages in views. Reuse wrappers instead of native buttons/fields in business views. Keep engine objects outside deep Vue reactivity. Every subscription/resource needs an owner and cleanup.
 
-En-têtes de responsabilité et commentaires d’intention, TypeScript strict, fonctions à quatre paramètres maximum, fichiers TS/Vue à 500 lignes maximum. Ne pas modifier les règles lint pour faire passer son travail. Ne pas étendre le périmètre, ajouter de dépendance, modifier le design ni corriger un comportement douteux sans accord du coordinateur. Aucune sous-délégation ni commit sans mandat explicite.
+Use English for identifiers, responsibility headers, intent comments, tests, UI copy and documentation. Product/engine names must not encode the current sample character. Use strict TypeScript, no more than four parameters per function and 500 lines per TS/Vue file. Do not change lint rules to pass your work. Do not expand scope, add dependencies, redesign UI or correct uncertain behavior without coordinator approval. No sub-delegation or commits without an explicit mandate.
 
-Compte rendu : fichiers changés, contrats, preuve RED/GREEN, commandes et résultats, écarts à la référence, travail restant. Mettre à jour seulement son issue si autorisé ; index et intégration appartiennent au coordinateur.
+Handoff: changed files, contracts, precise RED/GREEN evidence, commands/results, reference deviations and remaining work. Edit only your issue when authorized; the coordinator owns the index and integration.

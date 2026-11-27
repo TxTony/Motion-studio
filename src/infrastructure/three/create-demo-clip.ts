@@ -1,19 +1,19 @@
-/** Produit le clip initial synthétique en réutilisant le rig et le solveur de la référence. */
+/** Builds the initial synthetic clip using the default rig and retargeting solver. */
 import { Mesh } from "three";
-import { createGoblin } from "./CharacterRenderer";
+import { createDefaultCharacter } from "./CharacterRenderer";
 import { Retargeting } from "../retargeting/Retargeting";
 import { demoSample } from "../retargeting/SkeletonMapping";
 import type { AnimationClip } from "../../domain/studio";
 
-/** Capture six secondes déterministes, sans enregistrer de mouvement humain ni conserver le rig temporaire. */
+/** Generates six reproducible seconds of synthetic motion and releases the temporary rig. */
 export function createDemoClip(): AnimationClip {
-  const rig = createGoblin(),
+  const rig = createDefaultCharacter(),
     solver = new Retargeting();
   solver.smoothing = 0;
   const clip: AnimationClip = {
     format: "motion-studio",
     version: 1,
-    name: "Atelier · Démo",
+    name: "Workshop · Demo",
     rig: rig.id,
     fps: 30,
     duration: 6,

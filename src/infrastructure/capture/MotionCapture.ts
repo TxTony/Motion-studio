@@ -1,4 +1,4 @@
-/** Propriétaire exclusif du flux caméra, du modèle MediaPipe et de leur cycle de vie. */
+/** Owns the camera stream, MediaPipe model, and their lifecycles. */
 import { FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
 import type { PoseSample } from "../../domain/studio";
 
@@ -9,13 +9,13 @@ export class MotionCapture {
   private lastVideoTime = -1;
   private lastInference = 0;
   private loading: Promise<void> | null = null;
-  /** Lie le flux caméra à la vidéo possédée par le viewer. */
+  /** Binds the camera stream to the viewer-owned video element. */
   constructor(private video: HTMLVideoElement) {}
-  /** Indique si un flux vidéo a effectivement été obtenu. */
+  /** Indicates whether a video stream is active. */
   get active() {
     return this.stream !== null;
   }
-  /** Initialise une seule instance du modèle, partagée par les demandes de cette capture. */
+  /** Initializes one model instance shared by this capture's requests. */
   private async load() {
     if (this.detector) return;
     this.loading ??= (async () => {
@@ -38,13 +38,13 @@ export class MotionCapture {
     });
     await this.loading;
   }
-  /** Demande la vidéo seule et ferme les flux arrivés après une annulation. */
+  /** Requests video only and closes streams that arrive after cancellation. */
   async start(facingMode: "user" | "environment") {
     this.stop();
     const generation = this.generation;
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia)
       throw new Error(
-        "La caméra nécessite HTTPS ou localhost et un navigateur compatible.",
+        "Camera access requires HTTPS or localhost and a compatible browser.",
       );
     try {
       await this.load();
@@ -69,7 +69,7 @@ export class MotionCapture {
       throw error;
     }
   }
-  /** Inférence synchrone bornée à 30 Hz, uniquement sur une nouvelle image vidéo. */
+  /** Runs synchronous inference on new video frames only, up to 30 Hz. */
   sample(now: number): PoseSample | null | undefined {
     if (
       !this.detector ||
@@ -89,7 +89,7 @@ export class MotionCapture {
       world: result.worldLandmarks[0],
     };
   }
-  /** Invalide les demandes précédentes et restitue immédiatement la caméra. */
+  /** Invalidates pending requests and releases the camera immediately. */
   stop() {
     this.generation++;
     this.stream?.getTracks().forEach((t) => t.stop());
@@ -98,7 +98,7 @@ export class MotionCapture {
     this.video.srcObject = null;
     this.lastVideoTime = -1;
   }
-  /** Ferme le flux puis détruit le modèle après une initialisation éventuellement en cours. */
+  /** Closes the stream and disposes the model after any pending initialization finishes. */
   async dispose() {
     this.stop();
     await this.loading?.catch(() => {});

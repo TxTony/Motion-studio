@@ -1,5 +1,5 @@
-/** Ajuste les canvases 2D au pixel ratio sans exposer leur contexte à la session. */
-/** Retourne les dimensions CSS non nulles, ou null pour une surface masquée. */
+/** Sizes 2D canvases for the device pixel ratio. */
+/** Returns nonzero dimensions in CSS pixels or null if the surface is hidden. */
 export function resizeCanvas(
   canvas: HTMLCanvasElement,
 ): [number, number] | null {

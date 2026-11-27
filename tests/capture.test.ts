@@ -1,4 +1,4 @@
-/** Vérifie l’accès caméra et les annulations avec des doublures ; aucune image réelle n’est utilisée. */
+/** Tests camera access and cancellation with mock streams. */
 import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 const detector = vi.hoisted(() => ({
   detectForVideo: vi.fn(),
@@ -29,7 +29,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 describe("MotionCapture", () => {
-  it("demande uniquement la vidéo et libère le flux", async () => {
+  it("requests video only and releases the stream", async () => {
     const v = video(),
       c = new MotionCapture(v);
     await c.start("environment");
@@ -48,7 +48,7 @@ describe("MotionCapture", () => {
     await c.dispose();
     expect(detector.close).toHaveBeenCalledOnce();
   });
-  it("ferme un flux arrivé après annulation de la demande", async () => {
+  it("stops a stream that arrives after cancellation", async () => {
     let resolve!: (stream: unknown) => void;
     getUserMedia.mockImplementation(
       () =>
@@ -65,16 +65,16 @@ describe("MotionCapture", () => {
     expect(c.active).toBe(false);
     expect(stop).toHaveBeenCalledOnce();
   });
-  it("refuse HTTP non sécurisé et propage un refus utilisateur", async () => {
+  it("rejects insecure contexts and propagates permission errors", async () => {
     vi.stubGlobal("window", { isSecureContext: false });
     const c = new MotionCapture(video());
     await expect(c.start("user")).rejects.toThrow("HTTPS");
     vi.stubGlobal("window", { isSecureContext: true });
-    getUserMedia.mockRejectedValue(new Error("Permission refusée"));
-    await expect(c.start("user")).rejects.toThrow("Permission refusée");
+    getUserMedia.mockRejectedValue(new Error("Permission denied"));
+    await expect(c.start("user")).rejects.toThrow("Permission denied");
     expect(c.active).toBe(false);
   });
-  it("limite les inférences aux nouvelles images, à 30 Hz", async () => {
+  it("runs inference only on new frames, up to 30 Hz", async () => {
     detector.detectForVideo.mockReturnValue({
       landmarks: [],
       worldLandmarks: [],

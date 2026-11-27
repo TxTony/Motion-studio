@@ -1,8 +1,8 @@
-/** Applique les conventions architecturales aux sources du studio et échoue sur toute violation. */
+/** Applies architectural conventions to studio sources and fails on violations. */
 import { readdir, readFile } from "node:fs/promises";
 import { inspectSource } from "./architecture-rules.mjs";
 
-/** Parcourt les seuls fichiers source TypeScript/Vue de l’arborescence donnée. */
+/** Visits TypeScript/Vue sources in the requested directory tree. */
 async function inspectDirectory(directory) {
   let count = 0;
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -22,5 +22,5 @@ const violations = await inspectDirectory("src");
 if (violations) process.exitCode = 1;
 else
   console.log(
-    "Architecture : frontières, primitives, en-têtes et taille des fichiers conformes.",
+    "Architecture: boundaries, primitives, responsibility headers and file sizes are valid.",
   );

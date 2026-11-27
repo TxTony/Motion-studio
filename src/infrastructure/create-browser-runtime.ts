@@ -1,4 +1,4 @@
-/** Assemble les adaptateurs du navigateur derrière les ports de session, sans état Vue. */
+/** Wires browser adapters to the session ports without Vue state. */
 import type { SessionRuntime } from "../application/ports";
 import { MotionCapture } from "./capture/MotionCapture";
 import { Retargeting } from "./retargeting/Retargeting";
@@ -6,7 +6,7 @@ import { demoSample } from "./retargeting/SkeletonMapping";
 import type { CharacterRenderer } from "./three/CharacterRenderer";
 import { createDemoClip } from "./three/create-demo-clip";
 
-/** Lie une vidéo et un viewer ; le viewer conserve la propriété et la destruction de son renderer. */
+/** Connects the video element and renderer. The viewer owns and disposes its renderer. */
 export function createBrowserRuntime(
   video: HTMLVideoElement,
   renderer: CharacterRenderer,

@@ -1,4 +1,4 @@
-<!-- Compose le viewer de capture et ses commandes ; ne possède aucune règle de caméra. -->
+<!-- Composes the capture viewer and its commands without owning camera rules. -->
 <script setup lang="ts">
 import StudioPanel from "../core/StudioPanel.vue";
 import StudioButton from "../core/StudioButton.vue";
@@ -13,17 +13,17 @@ const emit = defineEmits<{
   facing: [value: "user" | "environment"];
 }>();
 const cameraOptions = [
-  { value: "user", label: "Caméra avant" },
-  { value: "environment", label: "Caméra arrière" },
+  { value: "user", label: "Front camera" },
+  { value: "environment", label: "Rear camera" },
 ];
-/** Convertit la sélection contrôlée en l’une des deux orientations acceptées. */
+/** Converts the controlled selection to one of the two supported camera orientations. */
 function changeFacing(value: string) {
   if (value === "user" || value === "environment") emit("facing", value);
 }
 </script>
 <template>
   <StudioPanel
-    title="Capture humaine"
+    title="Human capture"
     icon="◉"
     tag="MEDIAPIPE"
     class="capture-panel"
@@ -32,14 +32,14 @@ function changeFacing(value: string) {
       :sample="state?.sample ?? null"
       :source="state?.source ?? 'demo'"
       :facing="state?.facing ?? 'user'"
-      :caption="state?.captureCaption ?? 'Initialisation du studio…'"
+      :caption="state?.captureCaption ?? 'Initializing studio…'"
       :fps="state?.captureFps ?? 30"
       @ready="emit('videoReady', $event)"
     />
     <div class="capture-settings">
       <StudioSelect
         id="camera-facing"
-        label="Source caméra"
+        label="Camera source"
         :model-value="state?.facing ?? 'user'"
         :options="cameraOptions"
         :disabled="!props.state || state?.recording || state?.busy"
@@ -50,17 +50,17 @@ function changeFacing(value: string) {
           variant="primary"
           :disabled="!state || state.recording || state.busy"
           @click="emit('camera')"
-          >◉ Activer la caméra</StudioButton
+          >◉ Enable camera</StudioButton
         ><StudioButton
           variant="subtle"
           :disabled="!state || state.recording"
-          title="Revenir à la source synthétique"
+          title="Return to the synthetic source"
           @click="emit('demo')"
-          >Démo</StudioButton
+          >Demo</StudioButton
         >
       </div>
       <p class="hint">
-        Cadrez le corps entier, à 2–3 mètres. Gardez les articulations visibles.
+        Frame your whole body from 2–3 meters away. Keep your joints visible.
       </p>
     </div>
   </StudioPanel>

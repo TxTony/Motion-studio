@@ -1,4 +1,4 @@
-<!-- Expose les échanges JSON existants ; aucun format GLTF d’animation n’est proposé. -->
+<!-- Presents the existing JSON exchange actions without offering GLTF animation export. -->
 <script setup lang="ts">
 import StudioPanel from "../core/StudioPanel.vue";
 import StudioButton from "../core/StudioButton.vue";
@@ -10,18 +10,17 @@ const emit = defineEmits<{ export: []; import: [file: File] }>();
   <StudioPanel title="Export & import" tag="JSON v1" class="export-panel"
     ><div class="inspector-body">
       <p class="hint">
-        Sauvegardez les rotations et la timeline. Vos vidéos restent sur votre
-        appareil.
+        Save rotations and the timeline. Your videos stay on your device.
       </p>
       <div class="button-row">
         <StudioButton
           variant="primary"
           :disabled="disabled || !canExport"
           @click="emit('export')"
-          >⇩ Exporter le clip</StudioButton
+          >⇩ Export clip</StudioButton
         ><StudioFileInput
           id="json-import"
-          label="Importer"
+          label="Import"
           accept=".json,application/json"
           :disabled="disabled"
           @selected="emit('import', $event)"

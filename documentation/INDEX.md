@@ -1,26 +1,29 @@
-# Motion Studio — suivi unique
+# Motion Studio — project overview
 
-## Décisions en vigueur
+## Active decisions
 
-Reconstruction Vue 3/Vite autorisée le 27 novembre 2026. TDD, composants réutilisables et rangement imposé, mandats de rôles explicites. Aucun changement produit ou nouvelle esthétique. Les limitations caméra/mobile/GLTF du POC restent explicites. La référence `reference/poc-v0.1` pointe sur `63d03ec` ; `main` et le site Pages restent la comparaison publiée pendant le développement sur `refactor/vue3-studio`.
+Vue 3/Vite reconstruction authorized on 27 November 2026. Use TDD, reusable components, mandatory folder placement and explicit role mandates. Keep the POC's documented camera/mobile/GLTF limitations. Tag `reference/poc-v0.1` points to `63d03ec`; `main` and Pages remain the published reference while reconstruction is reviewed on `refactor/vue3-studio`.
 
-## Unités fonctionnelles
+MS-008: all maintained code, comments, tests, UI and documentation use English. Product and engine terminology are independent of the default character. Preserve its geometry and existing animation data compatibility; mascot creation is deferred. Immutable historical references are not rewritten.
 
-| Issue                      | Résultat vérifiable                                                      | Statut   | Responsable                           |
-| -------------------------- | ------------------------------------------------------------------------ | -------- | ------------------------------------- |
-| [MS-001](issues/MS-001.md) | Référence préservée et cadre agentique applicable                        | Terminée | Coordinateur                          |
-| [MS-002](issues/MS-002.md) | Clips et lecture indépendants de l’interface                             | En revue | animation_domain · gpt-6.2-sol medium |
-| [MS-003](issues/MS-003.md) | Référence visuelle et règles de composition explicites                   | En revue | design_reference · modèle hérité      |
-| [MS-004](issues/MS-004.md) | Capture et personnage intégrés dans des vues Vue à cycle de vie maîtrisé | En revue | Coordinateur / développeur            |
-| [MS-005](issues/MS-005.md) | Session et enregistrement pilotés par des commandes testées              | En revue | animation_domain · gpt-6.2-sol medium |
-| [MS-006](issues/MS-006.md) | Timeline, bibliothèque et échanges JSON/GLB utilisables dans Vue         | En revue | Coordinateur / développeur            |
-| [MS-007](issues/MS-007.md) | Studio assemblé, contrôlé et comparable à la référence                   | En revue | Coordinateur                          |
+## Functional units
 
-Statuts : À faire, En cours, En revue, Terminée. Les preuves détaillées appartiennent aux issues. « En revue » conserve les limites de recette et les acceptations attendues.
+| Issue                      | Verifiable outcome                                        | Status    | Owner                                                                  |
+| -------------------------- | --------------------------------------------------------- | --------- | ---------------------------------------------------------------------- |
+| [MS-001](issues/MS-001.md) | Preserved reference and actionable agent mandates         | Done      | Coordinator                                                            |
+| [MS-002](issues/MS-002.md) | Clips and playback independent of the UI                  | In review | animation_domain · gpt-6.2-sol medium                                  |
+| [MS-003](issues/MS-003.md) | Explicit presentation reference and composition rules     | In review | design_reference · inherited model                                     |
+| [MS-004](issues/MS-004.md) | Vue capture/character viewers with owned lifecycles       | In review | Coordinator                                                            |
+| [MS-005](issues/MS-005.md) | Tested session and recording commands                     | In review | animation_domain · gpt-6.2-sol medium                                  |
+| [MS-006](issues/MS-006.md) | Vue timeline, library and JSON/GLB exchanges              | In review | Coordinator                                                            |
+| [MS-007](issues/MS-007.md) | Integrated studio checked against the preserved reference | In review | Coordinator                                                            |
+| [MS-008](issues/MS-008.md) | English language and character-independent identity       | In review | Coordinator; animation_domain; design_reference; english_documentation |
+
+Statuses: To do, In progress, In review, Done. Detailed evidence belongs in issues; In review retains pending checks and acceptance decisions.
 
 ## Navigation
 
-- [Cadre](../AGENTS.md) et [architecture](ARCHITECTURE.md).
-- [Référence figée](REFERENCE.md) et [design](DESIGN.md).
-- [Recette historique du POC](../docs/RECETTE.md), conservée comme preuve de la version 0.1.
-- [README](../README.md) : installation et usage de la version courante.
+- [Contribution rules](../AGENTS.md) and [architecture](ARCHITECTURE.md).
+- [Frozen reference](REFERENCE.md) and [design](DESIGN.md).
+- [Historical POC acceptance report](../docs/POC-ACCEPTANCE.md), retained as evidence for version 0.1.
+- [README](../README.md): current installation and usage.

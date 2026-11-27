@@ -1,4 +1,4 @@
-/** Orchestre capture, lecture et bibliothèque. Le moteur et l’horloge arrivent par les ports injectés. */
+/** Coordinates capture, playback, and the library using an injected runtime and clock. */
 import {
   AnimationPlayer,
   type PoseInterpolator,
@@ -16,16 +16,16 @@ import {
 const bodyLossMs = 750;
 const recordingLimitMs = 300_000;
 const demoMessage =
-  "Mode démo actif : mouvements synthétiques, enregistrement et export disponibles.";
+  "Demo mode is active. You can record and export synthetic motion.";
 
 export interface SessionOptions {
   runtime: SessionRuntime;
-  /** Horloge monotone en millisecondes, dans le même repère que tick. */
+  /** Monotonic clock in milliseconds, sharing the same time origin as tick. */
   now: () => number;
   interpolate: PoseInterpolator;
 }
 
-/** Tire le message utile d’une erreur reçue d’un port. */
+/** Extracts a message from an error reported by a port. */
 function detail(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
@@ -44,7 +44,7 @@ export class StudioSession {
   private lastPoseAt = 0;
   private recordStart = 0;
 
-  /** Prépare la démo et sélectionne son clip sans quitter le temps réel. */
+  /** Initializes live demo mode and selects the demo clip. */
   constructor({ runtime, now, interpolate }: SessionOptions) {
     this.runtime = runtime;
     this.now = now;
@@ -55,7 +55,7 @@ export class StudioSession {
     this.previousTick = now();
   }
 
-  /** Expose un instantané peu profond. La bibliothèque est remplacée à chaque ajout. */
+  /** Returns a shallow snapshot. Each addition replaces the library array. */
   get snapshot(): StudioSnapshot {
     return {
       ...this.state,
@@ -69,7 +69,7 @@ export class StudioSession {
     };
   }
 
-  /** Indique si une capture ou un chargement réserve les commandes de changement. */
+  /** Indicates whether recording, loading, or disposal blocks session changes. */
   private get locked(): boolean {
     return (
       this.disposal !== null ||
@@ -78,7 +78,7 @@ export class StudioSession {
     );
   }
 
-  /** Ajuste les réglages. Le lissage exprimé en secondes reste actif pendant la capture. */
+  /** Updates settings. Smoothing, measured in seconds, remains adjustable during recording. */
   configure(patch: Partial<StudioSettings>): void {
     if (this.disposal) return;
     const smoothing = patch.smoothing ?? this.state.smoothing;
@@ -99,40 +99,38 @@ export class StudioSession {
     }
   }
 
-  /** Affiche un échec signalé par une frontière externe, par exemple le lecteur de fichiers. */
+  /** Shows an error reported by an external caller such as the file reader. */
   reportError(message: string): void {
     if (!this.disposal) this.state.status = { message, error: true };
   }
 
-  /** Affiche une information de session, par exemple la confirmation d’un export. */
+  /** Shows a session message such as confirmation of a successful export. */
   reportInfo(message: string): void {
     if (!this.disposal) this.state.status = { message, error: false };
   }
 
-  /** Replace l’origine du déplacement sur la prochaine pose valide. */
+  /** Uses the next valid pose as the origin for root motion. */
   calibrate(): void {
     if (this.disposal) return;
     this.runtime.resetRetarget();
-    this.reportInfo(
-      "Origine du déplacement réinitialisée sur la prochaine pose.",
-    );
+    this.reportInfo("The next pose will set a new origin for root motion.");
   }
 
-  /** Recentre la vue sans changer la pose ni le mode de session. */
+  /** Resets the view while preserving the current pose and session mode. */
   resetView(): void {
     if (!this.disposal) this.runtime.resetView();
   }
 
-  /** Revient à la source temps réel pour préparer une nouvelle capture. */
+  /** Returns to live mode to prepare a new recording. */
   live(): void {
     if (this.locked) return;
     this.enterLive();
     this.reportInfo(
-      "Source temps réel active. Nommez le clip puis lancez l’enregistrement.",
+      "Live mode is active. Name the clip, then start recording.",
     );
   }
 
-  /** Arrête la caméra, annule une demande en attente et revient en démo. */
+  /** Stops the camera, cancels any pending camera request, and returns to demo mode. */
   useDemo(): void {
     if (
       this.disposal ||
@@ -144,15 +142,13 @@ export class StudioSession {
     this.reportInfo(demoMessage);
   }
 
-  /** Demande la caméra et ignore toute réponse invalidée par une autre commande de source. */
+  /** Requests camera access and ignores a response after the request has been invalidated. */
   async startCamera(): Promise<void> {
     if (this.locked) return;
     const generation = ++this.cameraGeneration;
     this.operation = "camera";
     this.enterLive();
-    this.reportInfo(
-      "Chargement de MediaPipe puis demande d’accès à la caméra…",
-    );
+    this.reportInfo("Loading MediaPipe, then requesting camera access…");
 
     try {
       const active = await this.runtime.startCamera(this.state.facing);
@@ -165,22 +161,22 @@ export class StudioSession {
       this.state.ready = false;
       this.lastPoseAt = this.now();
       this.state.sample = null;
-      this.state.captureCaption = "Recherche du corps entier…";
+      this.state.captureCaption = "Looking for a full-body pose…";
       this.reportInfo(
-        "Caméra active. Cadrez le corps entier ; les poses sont traitées localement.",
+        "Camera is active. Keep your whole body in frame. Pose processing runs on this device.",
       );
     } catch (error) {
       if (generation !== this.cameraGeneration) return;
       this.enterDemo();
       this.reportError(
-        `Caméra indisponible : ${detail(error)}. Le mode démo reste disponible.`,
+        `Camera unavailable: ${detail(error)}. Demo mode is still available.`,
       );
     } finally {
       if (generation === this.cameraGeneration) this.operation = null;
     }
   }
 
-  /** Lance la capture du rig courant si la source est disponible. */
+  /** Starts recording for the current rig when the source is ready. */
   startRecording(): void {
     if (this.locked || !this.state.ready) return;
     this.enterLive();
@@ -193,17 +189,17 @@ export class StudioSession {
     );
     this.state.recordingTime = 0;
     const source =
-      this.state.source === "demo" ? "de la source synthétique" : "caméra";
-    this.reportInfo(`Enregistrement ${source} en cours. Limite : 5 minutes.`);
+      this.state.source === "demo" ? "synthetic motion" : "camera motion";
+    this.reportInfo(`Recording ${source}. Maximum duration: 5 minutes.`);
   }
 
-  /** Arrête la capture et sélectionne son clip lorsqu’il contient assez de poses. */
+  /** Stops recording and selects the resulting clip if it has enough poses. */
   stopRecording(): void {
     if (this.disposal || !this.recorder.recording) return;
     const clip = this.recorder.stop();
     if (!clip) {
       this.reportError(
-        "Capture trop courte ou aucune pose détectée. Aucun clip créé.",
+        "Recording was too short or contained no detected poses. No clip was created.",
       );
       return;
     }
@@ -211,16 +207,16 @@ export class StudioSession {
     this.selectClip(clip);
     this.state.clipName = `Capture_${String(this.state.clips.length).padStart(2, "0")}`;
     this.reportInfo(
-      `« ${clip.name} » enregistré : ${clip.frames.length} poses. Exportez le JSON pour le conserver.`,
+      `Recorded “${clip.name}” with ${clip.frames.length} poses. Export the JSON to keep it.`,
     );
   }
 
-  /** Charge et applique la première pose d’un clip compatible avec le rig actif. */
+  /** Loads a clip compatible with the active rig and applies its first pose. */
   selectClip(clip: AnimationClip): void {
     if (this.locked) return;
     if (clip.rig !== this.runtime.rigId) {
       this.reportError(
-        "Ce clip appartient à un autre rig. Rechargez le personnage utilisé pour cette capture.",
+        "This clip uses a different rig. Load the character used to record it.",
       );
       return;
     }
@@ -230,11 +226,11 @@ export class StudioSession {
     const pose = this.player.sample();
     if (pose) this.runtime.apply(pose);
     this.reportInfo(
-      `Clip « ${clip.name} » chargé. Lecture, boucle et timeline disponibles.`,
+      `Loaded “${clip.name}”. You can play it, loop it, or scrub the timeline.`,
     );
   }
 
-  /** Démarre ou suspend la lecture. Repart du début après la fin du clip. */
+  /** Toggles playback. Restarts from the beginning after the clip ends. */
   togglePlay(): void {
     const clip = this.player.clip;
     if (this.locked || !clip) return;
@@ -246,14 +242,14 @@ export class StudioSession {
     this.player.playing = !this.player.playing;
   }
 
-  /** Replace la tête au début du clip en conservant l’état lecture ou pause. */
+  /** Moves the playhead to the beginning and preserves the play or pause state. */
   rewind(): void {
     if (this.locked || !this.player.clip) return;
     this.state.mode = "playback";
     this.player.seek(0);
   }
 
-  /** Positionne la tête en secondes et met la lecture en pause. */
+  /** Moves the playhead to the given time in seconds and pauses playback. */
   seek(seconds: number): void {
     if (this.locked || !this.player.clip) return;
     this.player.playing = false;
@@ -261,24 +257,24 @@ export class StudioSession {
     this.player.seek(seconds);
   }
 
-  /** Active ou désactive la répétition du clip sélectionné. */
+  /** Toggles looping for the selected clip. */
   toggleLoop(): void {
     if (!this.locked && this.player.clip) this.player.loop = !this.player.loop;
   }
 
-  /** Règle le multiplicateur de vitesse utilisé à la prochaine lecture. */
+  /** Sets the playback speed multiplier. */
   setSpeed(speed: number): void {
     if (!this.disposal) this.player.speed = speed;
   }
 
-  /** Ajoute un clip déjà validé à la bibliothèque puis tente de le charger. */
+  /** Adds a validated clip to the library and attempts to load it. */
   importClip(clip: AnimationClip): void {
     if (this.locked) return;
     this.state.clips = [...this.state.clips, clip];
     this.selectClip(clip);
   }
 
-  /** Attend le remplacement du rig et réinitialise la sélection une fois le chargement réussi. */
+  /** Waits for the rig to load and clears the selection on success. */
   async importCharacter(
     bytes: ArrayBuffer,
     id: string,
@@ -293,12 +289,12 @@ export class StudioSession {
       this.player.clip = null;
       this.player.seek(0);
       this.state.characterName = name;
-      this.state.characterKind = "Personnage GLB importé";
+      this.state.characterKind = "Imported GLB character";
       this.reportInfo(
-        "Personnage GLB chargé. Les captures suivantes utiliseront ce rig.",
+        "GLB character loaded. New recordings will use this rig.",
       );
     } catch (error) {
-      this.reportError(`Import GLB refusé : ${detail(error)}`);
+      this.reportError(`Could not import GLB: ${detail(error)}`);
     } finally {
       if (!this.disposal) {
         this.operation = null;
@@ -307,7 +303,7 @@ export class StudioSession {
     }
   }
 
-  /** Échantillonne la source, avance la lecture si active, puis rend la scène. */
+  /** Samples the source, advances active playback, and renders the scene. */
   tick(nowMs: number): void {
     if (this.disposal) return;
     const deltaSeconds = Math.min((nowMs - this.previousTick) / 1000, 0.1);
@@ -327,22 +323,22 @@ export class StudioSession {
       this.stopRecording();
       this.enterDemo();
       this.reportError(
-        `Capture interrompue : ${detail(error)}. Retour au mode démo.`,
+        `Capture interrupted: ${detail(error)}. Returned to demo mode.`,
       );
     }
   }
 
-  /** Termine une capture en cours et arrête la caméra lors du passage en arrière-plan. */
+  /** Finishes any recording and stops the camera when the studio goes into the background. */
   suspend(): void {
     if (this.disposal) return;
     this.stopRecording();
     this.enterDemo();
     this.reportInfo(
-      "Caméra arrêtée au passage en arrière-plan. Réactivez-la pour reprendre.",
+      "Camera stopped while the studio was in the background. Turn it back on to resume.",
     );
   }
 
-  /** Invalide les réponses en attente et libère les adaptateurs une seule fois. */
+  /** Invalidates pending responses and disposes the runtime once. */
   dispose(): Promise<void> {
     if (this.disposal) return this.disposal;
     this.cameraGeneration++;
@@ -353,7 +349,7 @@ export class StudioSession {
     return this.disposal;
   }
 
-  /** Quitte la lecture et réinitialise l’échantillonnage du retargeting. */
+  /** Leaves playback and resets retargeting and sample timing. */
   private enterLive(): void {
     this.player.playing = false;
     this.state.mode = "live";
@@ -361,7 +357,7 @@ export class StudioSession {
     this.lastSample = 0;
   }
 
-  /** Rétablit la démo sans déverrouiller un éventuel chargement GLB encore actif. */
+  /** Returns to demo mode while keeping any pending GLB load reserved. */
   private enterDemo(): void {
     this.cameraGeneration++;
     if (this.operation === "camera") this.operation = null;
@@ -373,7 +369,7 @@ export class StudioSession {
     this.enterLive();
   }
 
-  /** Conserve l’image précédente entre deux inférences et retire le squelette dès que le corps manque. */
+  /** Keeps the previous sample between inferences and clears the skeleton when no body is detected. */
   private readCapture(nowMs: number): void {
     const sample = this.runtime.sample(nowMs, this.state.source);
     if (sample !== undefined) this.state.sample = sample;
@@ -383,12 +379,12 @@ export class StudioSession {
       nowMs - this.lastPoseAt > bodyLossMs
     ) {
       this.state.ready = false;
-      this.state.captureCaption = "Corps perdu · pose maintenue";
+      this.state.captureCaption = "Body out of view · holding last pose";
       this.state.sample = null;
     }
   }
 
-  /** Met à jour les mesures caméra et transmet les nouvelles poses au rendu et à l’enregistrement. */
+  /** Updates camera diagnostics and sends new poses to rendering and recording. */
   private updateLivePose(sample: PoseSample, nowMs: number): void {
     const deltaSeconds = this.lastSample
       ? (nowMs - this.lastSample) / 1000
@@ -400,7 +396,7 @@ export class StudioSession {
       const visible = sample.image.filter(
         (point) => (point.visibility ?? 0) > 0.5,
       ).length;
-      this.state.captureCaption = `${visible}/33 articulations visibles`;
+      this.state.captureCaption = `${visible}/33 joints visible`;
       this.state.captureFps = Math.min(30, Math.round(1 / deltaSeconds));
     }
     if (this.state.mode === "playback") return;

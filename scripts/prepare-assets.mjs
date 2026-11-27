@@ -1,4 +1,4 @@
-/** Copie les binaires WASM de la version npm verrouillée vers les ressources du site. */
+/** Copies WASM binaries from the locked npm package into the site's assets. */
 import { cp, mkdir } from "node:fs/promises";
 const destination = new URL("../public/mediapipe/", import.meta.url);
 await mkdir(destination, { recursive: true });
@@ -7,4 +7,4 @@ await cp(
   destination,
   { recursive: true },
 );
-console.log("MediaPipe WASM prêt (hébergé avec le site).");
+console.log("MediaPipe WASM ready (served with the site).");

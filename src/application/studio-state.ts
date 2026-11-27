@@ -1,4 +1,4 @@
-/** Initialise les données de session exposées à la vue, hors états dérivés du lecteur et de la capture. */
+/** Initializes the session data exposed to the view alongside derived playback and capture state. */
 import type { AnimationClip } from "../domain/studio";
 import type { StudioSnapshot } from "./ports";
 
@@ -12,9 +12,9 @@ export type StudioState = Omit<
   "busy" | "recording" | "playing" | "loop" | "speed" | "selectedClip" | "time"
 >;
 
-export const demoCaption = "Source synthétique · aucune caméra active";
+export const demoCaption = "Synthetic source · camera off";
 
-/** Prépare le temps réel synthétique avec les réglages par défaut du prototype. */
+/** Prepares synthetic live capture with the default studio settings. */
 export function createStudioState(initialClip: AnimationClip): StudioState {
   return {
     source: "demo",
@@ -30,11 +30,11 @@ export function createStudioState(initialClip: AnimationClip): StudioState {
     sample: null,
     captureCaption: demoCaption,
     captureFps: 30,
-    characterName: "Gobelin mécano",
-    characterKind: "Rig procédural · 11 articulations",
+    characterName: "Default character",
+    characterKind: "Procedural rig · 11 joints",
     status: {
       message:
-        "Mode démo actif. Activez votre caméra pour capturer vos propres mouvements.",
+        "Demo mode is active. Turn on your camera to capture your own movements.",
       error: false,
     },
   };

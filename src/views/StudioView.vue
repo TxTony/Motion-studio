@@ -1,4 +1,4 @@
-<!-- Compose la page Studio à partir des projections et intentions, sans règle de capture ni de clip. -->
+<!-- Composes the Studio page from snapshots and intentions without capture or clip rules. -->
 <script setup lang="ts">
 import StudioPanel from "../components/core/StudioPanel.vue";
 import StudioButton from "../components/core/StudioButton.vue";
@@ -22,27 +22,26 @@ const {
 </script>
 <template>
   <header class="topbar">
-    <a class="brand" href="#" aria-label="Goblin Motion Studio"
-      ><span class="brand-mark">G<span>•</span></span
+    <a class="brand" href="#" aria-label="Motion Studio"
+      ><span class="brand-mark">M<span>•</span></span
       ><span
-        >GOBLIN <b>MOTION STUDIO</b
-        ><small>LE MOUVEMENT DEVIENT PERSONNAGE</small></span
+        ><b>MOTION STUDIO</b><small>TURN MOVEMENT INTO CHARACTER</small></span
       ></a
     >
-    <nav aria-label="Espaces du studio">
+    <nav aria-label="Studio workspaces">
       <a href="#workspace" class="active">◉ <span>Capture</span></a
-      ><a href="#library">▤ <span>Bibliothèque</span></a
-      ><a href="#character">♙ <span>Personnage</span></a>
+      ><a href="#library">▤ <span>Library</span></a
+      ><a href="#character">♙ <span>Character</span></a>
     </nav>
     <span class="version">POC <b>v0.1</b></span>
   </header>
   <main>
     <div class="workspace-heading">
       <div>
-        <span class="eyebrow">VOTRE ATELIER DE MOTION CAPTURE</span>
-        <h1>Donnez vie à vos idées<span>.</span></h1>
+        <span class="eyebrow">YOUR MOTION CAPTURE WORKSHOP</span>
+        <h1>Bring your ideas to life<span>.</span></h1>
       </div>
-      <span class="local-badge">◈ Traitement sur votre appareil</span>
+      <span class="local-badge">◈ Processing on your device</span>
     </div>
     <section id="workspace" class="workspace">
       <CapturePanel
@@ -54,26 +53,26 @@ const {
       />
       <StudioPanel
         id="character"
-        title="Scène 3D"
+        title="3D scene"
         icon="◇"
         class="character-panel"
       >
         <template #actions
           ><div class="scene-actions">
             <span class="live-label">{{
-              state?.mode === "playback" ? "LECTURE DU CLIP" : "TEMPS RÉEL"
+              state?.mode === "playback" ? "CLIP PLAYBACK" : "REAL TIME"
             }}</span><StudioButton
               variant="icon"
-              title="Recentrer la caméra 3D"
-              aria-label="Recentrer la caméra 3D"
+              title="Recenter 3D camera"
+              aria-label="Recenter 3D camera"
               @click="commands.resetView"
               >⛶</StudioButton
             >
           </div></template
         >
         <Scene3DViewer
-          :name="state?.characterName ?? 'Gobelin mécano'"
-          :kind="state?.characterKind ?? 'Rig procédural · 11 articulations'"
+          :name="state?.characterName ?? 'Default character'"
+          :kind="state?.characterKind ?? 'Procedural rig · 11 joints'"
           @ready="bindRenderer"
           @error="failInitialization"
         />
@@ -130,14 +129,12 @@ const {
       aria-live="polite"
     >
       {{
-        initializationError ||
-        state?.status.message ||
-        "Initialisation du studio…"
+        initializationError || state?.status.message || "Initializing studio…"
       }}
     </div>
     <footer>
-      <span><i></i> GOBLIN MOTION STUDIO <b>/</b> ATELIER EXPÉRIMENTAL</span
-      ><span>Sans compte. Sans serveur. À vous de jouer.</span>
+      <span><i></i> MOTION STUDIO <b>/</b> EXPERIMENTAL WORKSHOP</span
+      ><span>No account. No server. Make it move.</span>
     </footer>
   </main>
 </template>

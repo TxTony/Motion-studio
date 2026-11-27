@@ -1,4 +1,4 @@
-/** Convertit les repères MediaPipe en directions Three.js ; aucune dépendance au personnage. */
+/** Converts MediaPipe landmarks to character-independent Three.js directions. */
 import { Matrix4, Quaternion, Vector3 } from "three";
 import type { JointName, Landmark, PoseSample } from "../../domain/studio";
 
@@ -28,9 +28,9 @@ export const limbPairs: Partial<Record<JointName, [number, number]>> = {
   rightUpperLeg: [24, 26],
   rightLowerLeg: [26, 28],
 };
-/** Convertit le repère MediaPipe en repère Three.js Y haut, Z frontal. */
+/** Converts MediaPipe coordinates to the Three.js frame with Y up and Z forward. */
 export const point = (p: Landmark) => new Vector3(p.x, -p.y, -p.z);
-/** Valide les points utiles d’un segment avant d’en calculer la direction. */
+/** Checks the landmarks for a segment before computing its direction. */
 export function visible(points: Landmark[], ids: number[]): boolean {
   return ids.every(
     (i) =>
@@ -39,7 +39,7 @@ export function visible(points: Landmark[], ids: number[]): boolean {
       [points[i].x, points[i].y, points[i].z].every(Number.isFinite),
   );
 }
-/** Orientation du bassin : X vers la gauche anatomique, Y vers les épaules, Z frontal. */
+/** Orients the hips with X toward anatomical left, Y toward the shoulders, and Z forward. */
 export function torsoOrientation(points: Landmark[]): Quaternion | null {
   if (!visible(points, [11, 12, 23, 24])) return null;
   const x = point(points[23]).sub(point(points[24])).normalize();
@@ -56,7 +56,7 @@ export function torsoOrientation(points: Landmark[]): Quaternion | null {
   );
 }
 
-/** Source synthétique explicitement signalée, pour vérifier toute la chaîne sans caméra. */
+/** Provides a synthetic source to exercise the capture pipeline without a camera. */
 export function demoSample(seconds: number): PoseSample {
   const world: Landmark[] = Array.from({ length: 33 }, () => ({
     x: 0,
@@ -64,7 +64,7 @@ export function demoSample(seconds: number): PoseSample {
     z: 0,
     visibility: 1,
   }));
-  /** Place un point synthétique visible dans le repère de capture. */
+  /** Places a visible synthetic landmark in capture coordinates. */
   const put = (i: number, x: number, y: number, z = 0) => {
     world[i] = { x, y, z, visibility: 1 };
   };

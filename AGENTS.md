@@ -1,48 +1,52 @@
-# Motion Studio — règles de contribution
+# Motion Studio — contribution rules
 
-## Lecture et périmètre
+## Read first and stay within scope
 
-Lire `documentation/INDEX.md`, l’issue porteuse dans `documentation/issues/`, puis les seuls contrats et fichiers concernés. Une unité fonctionnelle décrit un résultat vérifiable, pas un fichier. En cas de contradiction ou d’information manquante, le développeur demande au coordinateur ; celui-ci consulte les sources puis le PO si nécessaire. Ne pas inventer de comportement, de contrat ni de décision produit.
+Read `documentation/INDEX.md`, the owning issue in `documentation/issues/`, then only the relevant contracts and files. A functional unit describes a verifiable outcome, not a file. Developers must consult the coordinator when information is missing or contradictory; the coordinator checks the sources and asks the PO when needed. Never invent behavior, contracts or product decisions.
 
-La référence immuable est le tag `reference/poc-v0.1`, commit `63d03ec348618f39890652803398a463b3de578d`. Ne pas modifier/déplacer ce tag, son worktree de comparaison ni l’image de référence. La reconstruction se fait sur `refactor/vue3-studio` ; ne pas remplacer la version Pages de référence sans décision du PO.
+The immutable reference is tag `reference/poc-v0.1`, commit `63d03ec348618f39890652803398a463b3de578d`. Never change or move that tag, its comparison worktree or the reference image. Work on `refactor/vue3-studio`; do not replace the reference Pages deployment without a PO decision.
 
-## Architecture obligatoire
+## Language and product identity
 
-- Vue 3, Composition API, `<script setup lang="ts">`, Vite et TypeScript strict.
-- `src/domain/` : données, règles et ports ; aucun import Vue, Three.js, MediaPipe ou DOM.
-- `src/infrastructure/` : adaptateurs navigateur, caméra, MediaPipe, Three.js et fichiers. Respecter les ports du domaine ; libérer flux, listeners, observer et ressources GPU.
-- `src/application/` : session et cas d’usage testables, dépendances injectées. Les données lourdes et objets Three restent hors de la réactivité profonde.
-- `src/composables/` : raccordements Vue et cycle de vie ; pas de mixins ni de singleton de session implicite.
-- `src/views/` : composition de pages, sans règle métier ni initialisation directe du moteur.
-- `src/components/core/` : primitives réutilisables (bouton, panneau, badge).
-- `src/components/forms/` : champs et contrôles de formulaire, systématiquement ici, jamais recopiés dans une vue.
-- `src/components/selectors/` : sélecteurs de valeurs/options, systématiquement ici.
-- `src/components/domain/` : vues propres au studio, dont `Scene3DViewer`, capture et timeline.
-- Les boutons des vues et composants métier utilisent `StudioButton`. Les champs utilisent les wrappers de formulaire/sélecteur. Les exceptions de primitives s’expliquent dans l’issue.
-- Tests, doubles et fixtures dans `tests/`, jamais importés par les sources du produit. Aucun dossier vide pour simuler une architecture.
+All maintained source code, identifiers, responsibility headers, intent comments, tests, UI copy and documentation must be in English. Keep product and engine terminology independent of the current sample character. Treat the procedural model as an interchangeable default character. Its geometry is an asset detail, not a domain concept. Mascot design is a separate, deferred task. Imported user content and immutable historical artifacts retain their original data.
 
-## Contrats et qualité
+## Required architecture
 
-Chaque fichier source commence par une brève description de sa responsabilité. Chaque fonction nommée/méthode et fonction publique a un commentaire d’intention ; ajouter unités, limites et effets de bord quand utiles. Les callbacks triviaux utilisent le contexte de la fonction englobante. Noms métier explicites, composants PascalCase, composables `useX`, variables/fonctions camelCase, types PascalCase.
+- Vue 3, Composition API, `<script setup lang="ts">`, Vite and strict TypeScript.
+- `src/domain/`: data, rules and ports; no Vue, Three.js, MediaPipe or DOM imports.
+- `src/infrastructure/`: browser, camera, MediaPipe, Three.js and file adapters. Implement the ports and release streams, listeners, observers and GPU resources.
+- `src/application/`: testable sessions and use cases with injected dependencies. Keep large data and engine objects outside deep reactivity.
+- `src/composables/`: Vue connections and lifecycle; no mixins or implicit session singleton.
+- `src/views/`: page composition, without business rules or direct engine initialization.
+- `src/components/core/`: reusable primitives such as buttons, panels and badges.
+- `src/components/forms/`: form fields and controls, always here, never copied into a view.
+- `src/components/selectors/`: value/option selectors, always here.
+- `src/components/domain/`: studio-specific viewers and controls, including Scene3DViewer, capture and timeline.
+- Views and business components use StudioButton and the form/selector wrappers. Explain any primitive exception in its issue.
+- Put tests, doubles and fixtures under `tests/`; product sources must not import them. Do not create empty directories to simulate architecture.
 
-Maximum 500 lignes par fichier TypeScript ou composant Vue et quatre paramètres par fonction. ESLint applique ces limites et les règles Vue/TypeScript ; les contrôles d’architecture vérifient rangement, frontières et en-têtes. Un objet d’options ne masque pas une responsabilité excessive. Pas de désactivation de règle pour contourner ces contraintes sans justification du coordinateur dans l’issue. Préférer la réutilisation justifiée aux couches spéculatives. Aucun store global ou routeur sans besoin réel.
+## Contracts and quality
 
-## Cycle de réalisation
+Start every source file with a short responsibility description. Explain the intent of every named/public function and method; include units, limits and side effects where useful. Trivial callbacks inherit the surrounding function's explanation. Use explicit business names: PascalCase components/types, `useX` composables and camelCase variables/functions.
 
-1. Le coordinateur borne l’issue : résultat, invariants, contrats, fichiers attribués et recette.
-2. Pour un nouveau comportement : test pertinent en échec → implémentation minimale → tests verts → refactor. Conserver la preuve RED/GREEN dans l’issue. Pour une migration : conserver/caractériser d’abord le comportement existant.
-3. Exécuter `npm run check` (architecture, ESLint, types, tests, build). Distinguer lecture statique, essai automatisé et observation humaine.
-4. Tester l’unité dans le navigateur, comparer à `documentation/DESIGN.md` et à la référence. Corriger les écarts, refaire la boucle. Une simulation desktop ne valide pas un vrai téléphone.
-5. Mettre à jour l’issue : travaux, décisions, preuves exactes, anomalies, limites et suite. L’index global conserve uniquement statut, liens et contraintes actives.
-6. Le coordinateur révise et intègre ; `En revue` si recette PO/humaine attendue, `Terminée` seulement avec critères satisfaits et verdict requis. Commits avec identifiant d’issue. Ne jamais prétendre un test passé sans l’avoir exécuté.
+Limit TypeScript/Vue files to 500 lines and functions to four parameters. ESLint enforces these limits and Vue/TypeScript conventions; architecture checks enforce file placement, boundaries and responsibility headers. An options object must not hide excessive responsibilities. Do not disable rules to bypass constraints without the coordinator's documented justification. Reuse based on actual needs; do not add a global store or router without a real consumer.
 
-## Sous-agents
+## Delivery cycle
 
-Les mandats sont dans `.agents/roles/`. Le coordinateur transmet explicitement le fichier de rôle, l’issue et le périmètre au lancement : ces fichiers Markdown sont des instructions de travail, pas une configuration magique du runtime.
+1. The coordinator scopes the issue: outcome, invariants, contracts, assigned files and acceptance checks.
+2. For new behavior: meaningful failing test → minimal implementation → green tests → refactor. Record RED/GREEN evidence. For migration: preserve or characterize existing behavior before moving it.
+3. Run `npm run check`: architecture, ESLint, formatting, types, tests and build. Distinguish static reading, automated checks and human observations.
+4. Test the functional unit in the browser against documentation/DESIGN.md and the reference. Correct discrepancies and repeat the relevant checks. Desktop emulation does not validate a real phone.
+5. Update the issue with work, decisions, exact evidence, defects, limitations and next steps. Keep the global index limited to status, links and active constraints.
+6. The coordinator reviews and integrates. Use In review when PO/human acceptance remains pending; use Done only when the criteria and required verdict are satisfied. Include issue IDs in commits. Never claim an unexecuted test passed.
 
-- Coordinateur : `.agents/roles/coordinator.md`.
-- Développeur : `.agents/roles/developer.md`.
-- Designer : `.agents/roles/designer.md`.
-- Synthèse ponctuelle : `.agents/roles/summarizer.md`.
+## Sub-agents
 
-Paralléliser seulement les responsabilités indépendantes, sans écriture concurrente d’un fichier. Les développeurs ne sous-délèguent ni ne committent sans mandat. Réutiliser les agents déjà lancés. Le coordinateur garde l’intégration et les mises à jour de l’index. Documentation en français, concise, sans justification promotionnelle de la stack.
+Role mandates live in `.agents/roles/`. The coordinator explicitly passes the role file, issue and scope at launch; Markdown mandates are instructions, not automatic runtime configuration.
+
+- Coordinator: `.agents/roles/coordinator.md`.
+- Developer: `.agents/roles/developer.md`.
+- Designer: `.agents/roles/designer.md`.
+- Optional document summarizer: `.agents/roles/summarizer.md`.
+
+Parallelize independent work only, without concurrent writes to the same file. Developers must not delegate or commit without a mandate. Reuse existing agents. The coordinator owns integration and index updates. Keep documentation concise and factual, without promotional explanations for technology choices.

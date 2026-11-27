@@ -1,4 +1,4 @@
-<!-- Champ texte réutilisable : label, contraintes natives et valeur contrôlée par le parent. -->
+<!-- Reusable text field: label, native constraints and a parent-controlled value. -->
 <script setup lang="ts">
 defineProps<{
   id: string;
@@ -9,7 +9,7 @@ defineProps<{
 }>();
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
-/** Remonte la saisie brute sans appliquer de validation métier. */
+/** Emits raw text without applying business validation. */
 function handleInput(event: Event): void {
   emit("update:modelValue", (event.target as HTMLInputElement).value);
 }

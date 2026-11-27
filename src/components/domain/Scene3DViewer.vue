@@ -1,4 +1,4 @@
-<!-- Encapsule Three.js, ses surimpressions et la propriété du montage/démontage des ressources GPU. -->
+<!-- Encapsulates Three.js, its overlays and ownership of GPU resource setup and teardown. -->
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref } from "vue";
 import { CharacterRenderer } from "../../infrastructure/three/CharacterRenderer";
@@ -17,7 +17,7 @@ onMounted(() => {
   } catch {
     emit(
       "error",
-      "WebGL indisponible. Activez l’accélération graphique ou ouvrez un navigateur compatible.",
+      "WebGL is unavailable. Enable hardware acceleration or open a compatible browser.",
     );
   }
 });
@@ -30,9 +30,7 @@ onBeforeUnmount(() => renderer?.dispose());
         kind
       }}</span>
     </div>
-    <div class="scene-help">
-      Glisser pour orbiter <span>·</span> Pincer pour zoomer
-    </div>
+    <div class="scene-help">Drag to orbit <span>·</span> Pinch to zoom</div>
     <span class="axis-mark"><b>Y</b><span>Z ◇ X</span></span>
   </div>
 </template>

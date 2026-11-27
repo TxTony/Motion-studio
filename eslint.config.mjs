@@ -1,4 +1,4 @@
-/** Configure les garde-fous Vue/TypeScript et les limites de responsabilité du projet. */
+/** Configures Vue/TypeScript conventions and project responsibility limits. */
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import vue from "eslint-plugin-vue";
